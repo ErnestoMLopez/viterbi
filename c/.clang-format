@@ -1,0 +1,25 @@
+BasedOnStyle: WebKit
+
+AlignAfterOpenBracket: AlwaysBreak
+AlignConsecutiveAssignments: Consecutive
+AlignConsecutiveMacros: Consecutive
+AlignEscapedNewlines: Left
+AlignOperands: DontAlign
+AlignTrailingComments: true
+AllowShortEnumsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: false
+AllowAllParametersOfDeclarationOnNextLine: false
+AllowAllArgumentsOnNextLine: false
+BinPackArguments: false
+BinPackParameters: false
+ColumnLimit: 120
+ContinuationIndentWidth: 8
+IndentWidth: 4
+InsertNewlineAtEOF: True
+MaxEmptyLinesToKeep: 2
+QualifierAlignment: Left
+SpacesBeforeTrailingComments: 2
+
+PenaltyBreakAssignment: 50
+PenaltyBreakComment: 10
+PenaltyReturnTypeOnItsOwnLine: 200
