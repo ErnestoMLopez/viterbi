@@ -1,1 +1,56 @@
-int viterbi(void);
+/**
+ * \file viterbi.h
+ *
+ * \brief Public interface for the C implementation of a Viterbi decoder.
+ */
+
+#ifndef VITERBI_H_
+#define VITERBI_H_
+
+/* =======================================================================
+ * [INCLUDES]
+ * =======================================================================
+ */
+
+#include <stdint.h>
+
+
+/* =======================================================================
+ * [MACROS]
+ * =======================================================================
+ */
+
+#define VSD_IN_BYTES          30
+#define VSD_OUT_BYTES         15
+#define VSD_IN_SYMBOLS        240
+#define VSD_OUT_BITS          120
+#define VSD_CONSTRAINT_LENGTH 7
+#define VSD_POLY_G1           0171
+#define VSD_POLY_G2           0133
+#define VSD_INVERT_G1         0
+#define VSD_INVERT_G2         1
+
+#define VSD_NSTATES (1 << (VSD_CONSTRAINT_LENGTH - 1))
+
+
+/* =======================================================================
+ * [TYPEDEF]
+ * =======================================================================
+ */
+
+
+/* =======================================================================
+ * [EXTERNAL DATA DECLARATION]
+ * =======================================================================
+ */
+
+/* Ideally, this section should never be used on a public interface */
+
+/* =======================================================================
+ * [PUBLIC INTERFACE PROTOTYPES]
+ * =======================================================================
+ */
+
+void viterbiStaticDecoder(const uint8_t in[VSD_IN_BYTES], uint8_t out[VSD_OUT_BYTES]);
+
+#endif
