@@ -18,7 +18,10 @@
  * =======================================================================
  */
 
-#define K VSD_CONSTRAINT_LENGTH
+#define VSD_NSTATES             (1 << (VSD_CONSTRAINT_LENGTH - 1))
+#define VSD_SHIFT_REGISTER_MASK ((1 << VSD_CONSTRAINT_LENGTH) - 1)
+#define VSD_STATE_MASK          ((1 << (VSD_CONSTRAINT_LENGTH - 1)) - 1)
+
 
 /* =======================================================================
  * [TYPEDEF]
@@ -74,21 +77,18 @@ static inline void setOutBit(uint8_t out[VSD_OUT_BYTES], const uint32_t bit, con
     out[byte] |= (1 << bitpos);
 }
 
-static inline uint8_t encodeBit(uint8_t state, uint8_t bit)
+static inline uint8_t encodeBit(uint32_t state, uint8_t bit)
 {
-    const uint8_t reg = (uint8_t)((bit << (K - 1)) | (state & ((1 << (K - 1)) - 1)));
-    const uint8_t g1  = parity8(reg & (uint8_t)VSD_POLY_G1) ^ VSD_INVERT_G1;
-    const uint8_t g2  = parity8(reg & (uint8_t)VSD_POLY_G2) ^ VSD_INVERT_G2;
+    const uint32_t reg = ((state << 1) | bit) & VSD_SHIFT_REGISTER_MASK;
+    const uint8_t g1   = parity8(reg & VSD_POLY_G1) ^ VSD_INVERT_G1;
+    const uint8_t g2   = parity8(reg & VSD_POLY_G2) ^ VSD_INVERT_G2;
 
     return g1 | (g2 << 1);
 }
 
 static inline uint32_t getNextState(const uint32_t state, const uint8_t newBit)
 {
-    uint32_t nextState = (uint8_t)(((uint8_t)state >> 1) | (newBit << (K - 2)));
-    nextState &= (VSD_NSTATES - 1);
-
-    return nextState;
+    return ((state << 1) | newBit) & VSD_STATE_MASK;
 }
 
 /* =======================================================================
@@ -161,7 +161,7 @@ void viterbiStaticDecoder(const uint8_t in[VSD_IN_BYTES], uint8_t out[VSD_OUT_BY
     memset(out, 0, VSD_OUT_BYTES);
 
     for (outBit = VSD_OUT_BITS - 1; outBit >= 0; outBit--) {
-        const uint8_t decodedBit = (uint8_t)((state >> (K - 2)) & 1);
+        const uint32_t decodedBit = state & 1;
         setOutBit(out, outBit, decodedBit);
         state = (int32_t)survivors[outBit][state];
     }

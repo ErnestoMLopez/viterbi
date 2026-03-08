@@ -25,12 +25,10 @@
 #define VSD_IN_SYMBOLS        240
 #define VSD_OUT_BITS          120
 #define VSD_CONSTRAINT_LENGTH 7
-#define VSD_POLY_G1           0171
-#define VSD_POLY_G2           0133
+#define VSD_POLY_G1           0117  // Equivalente a 0171 en convención MSB más reciente
+#define VSD_POLY_G2           0155  // Equivalente a 0133 en convención MSB más reciente
 #define VSD_INVERT_G1         0
 #define VSD_INVERT_G2         1
-
-#define VSD_NSTATES (1 << (VSD_CONSTRAINT_LENGTH - 1))
 
 
 /* =======================================================================
