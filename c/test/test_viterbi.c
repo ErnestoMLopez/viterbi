@@ -4,6 +4,8 @@
 
 #include "../src/viterbi.h"
 
+// #define VERBOSE_OUTPUT
+
 const uint8_t inputSymbols[VSD_IN_BYTES] = { 0x8C, 0x1A, 0xAA, 0x73, 0x31, 0x5A, 0x6F, 0x59, 0x78, 0x95,
                                              0x55, 0x8C, 0xCE, 0xA5, 0x90, 0xA6, 0x84, 0x02, 0x02, 0x1B,
                                              0x99, 0xEB, 0x5C, 0x18, 0xBB, 0xFD, 0xFD, 0xE4, 0x53, 0x22 };
@@ -11,7 +13,7 @@ const uint8_t inputSymbols[VSD_IN_BYTES] = { 0x8C, 0x1A, 0xAA, 0x73, 0x31, 0x5A,
 const uint8_t expectedOutputBits[VSD_OUT_BYTES] = { 0xFF, 0xF0, 0xCC, 0xAA, 0x00, 0x0F, 0x33, 0x55,
                                                     0xE3, 0xEC, 0xDF, 0x8A, 0x1C, 0x13, 0x40 };
 
-int calculateBitErrors(uint8_t* output)
+int calculateBitErrors(const uint8_t* output)
 {
     int diffBits = 0;
 
@@ -28,7 +30,7 @@ int calculateBitErrors(uint8_t* output)
     return diffBits;
 }
 
-void printBitsComparison(uint8_t* output)
+void printBitsComparison(const uint8_t* output)
 {
     printf("Expected : ");
 
@@ -45,31 +47,42 @@ void printBitsComparison(uint8_t* output)
     printf("\n");
 }
 
-void printResults(int diffBits)
+void printResults(int diffBits, unsigned int errorsDetected)
 {
     if (diffBits == 0) {
-        printf("Result: OK — Output bit sequence matches expected sequence.\n");
+        printf("Result: OK\n");
+        printf(" >> Output bit sequence matches expected sequence\n");
+        printf(" >> %u bit errors detected\n", errorsDetected);
     } else {
-        printf("Result: FAIL — %d different bits.\n", diffBits);
+        printf("Result: FAIL\n");
+        printf(" >> %d different bits.\n", diffBits);
+        printf(" >> %u bit errors detected\n", errorsDetected);
     }
+}
+
+void processTestResults(const uint8_t* output, uint32_t bitErrors)
+{
+#ifdef VERBOSE_OUTPUT
+    printBitsComparison(output);
+#endif
+
+    int diffBits = calculateBitErrors(output);
+
+    printResults(diffBits, bitErrors);
 }
 
 void test1(void)
 {
-    printf("Test 1: Input without errors.\n");
+    printf("Test 1: Input with 0 errors.\n");
 
     uint8_t input[VSD_IN_BYTES];
     uint8_t output[VSD_OUT_BYTES];
 
     memcpy(input, inputSymbols, sizeof(inputSymbols));
 
-    viterbiStaticDecoder(input, output);
+    uint32_t bitErrors = viterbiStaticDecoder(input, output);
 
-    printBitsComparison(output);
-
-    int diffBits = calculateBitErrors(output);
-
-    printResults(diffBits);
+    processTestResults(output, bitErrors);
 }
 
 void test2(void)
@@ -84,18 +97,14 @@ void test2(void)
     /* Inserting 1 bit error */
     input[3] ^= 0b100;
 
-    viterbiStaticDecoder(input, output);
+    uint32_t bitErrors = viterbiStaticDecoder(input, output);
 
-    printBitsComparison(output);
-
-    int diffBits = calculateBitErrors(output);
-
-    printResults(diffBits);
+    processTestResults(output, bitErrors);
 }
 
 void test3(void)
 {
-    printf("Test 3: Input with 1 bit error per byte.\n");
+    printf("Test 3: Input with 30 bit errors (1 per byte).\n");
 
     uint8_t input[VSD_IN_BYTES];
     uint8_t output[VSD_OUT_BYTES];
@@ -108,18 +117,14 @@ void test3(void)
         input[i] ^= 0b100;
     }
 
-    viterbiStaticDecoder(input, output);
+    uint32_t bitErrors = viterbiStaticDecoder(input, output);
 
-    printBitsComparison(output);
-
-    int diffBits = calculateBitErrors(output);
-
-    printResults(diffBits);
+    processTestResults(output, bitErrors);
 }
 
 void test4(void)
 {
-    printf("Test 4: Input with 2 bit errors per byte.\n");
+    printf("Test 4: Input with 60 bit errors (2 per byte).\n");
 
     uint8_t input[VSD_IN_BYTES];
     uint8_t output[VSD_OUT_BYTES];
@@ -132,18 +137,14 @@ void test4(void)
         input[i] ^= 0b0101;
     }
 
-    viterbiStaticDecoder(input, output);
+    uint32_t bitErrors = viterbiStaticDecoder(input, output);
 
-    printBitsComparison(output);
-
-    int diffBits = calculateBitErrors(output);
-
-    printResults(diffBits);
+    processTestResults(output, bitErrors);
 }
 
 void test5(void)
 {
-    printf("Test 5: Input with a burst of 5 bit errors.\n");
+    printf("Test 5: Input with 5 bit errors (burst of 5).\n");
 
     uint8_t input[VSD_IN_BYTES];
     uint8_t output[VSD_OUT_BYTES];
@@ -153,13 +154,26 @@ void test5(void)
     /* Inserting 5 bit error */
     input[VSD_IN_BYTES / 2] ^= 0b11111;
 
-    viterbiStaticDecoder(input, output);
+    uint32_t bitErrors = viterbiStaticDecoder(input, output);
 
-    printBitsComparison(output);
+    processTestResults(output, bitErrors);
+}
 
-    int diffBits = calculateBitErrors(output);
+void test6(void)
+{
+    printf("Test 5: Input with 6 bit errors (burst of 6).\n");
 
-    printResults(diffBits);
+    uint8_t input[VSD_IN_BYTES];
+    uint8_t output[VSD_OUT_BYTES];
+
+    memcpy(input, inputSymbols, sizeof(inputSymbols));
+
+    /* Inserting 6 bit error */
+    input[VSD_IN_BYTES / 2] ^= 0b111111;
+
+    uint32_t bitErrors = viterbiStaticDecoder(input, output);
+
+    processTestResults(output, bitErrors);
 }
 
 int main(void)
@@ -169,4 +183,5 @@ int main(void)
     test3();
     test4();
     test5();
+    test6();
 }

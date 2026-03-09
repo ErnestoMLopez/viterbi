@@ -49,6 +49,6 @@
  * =======================================================================
  */
 
-void viterbiStaticDecoder(const uint8_t in[VSD_IN_BYTES], uint8_t out[VSD_OUT_BYTES]);
+uint32_t viterbiStaticDecoder(const uint8_t in[VSD_IN_BYTES], uint8_t out[VSD_OUT_BYTES]);
 
 #endif

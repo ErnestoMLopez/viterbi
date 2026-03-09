@@ -97,7 +97,7 @@ static inline uint32_t getNextState(const uint32_t state, const uint8_t newBit)
  */
 
 
-void viterbiStaticDecoder(const uint8_t in[VSD_IN_BYTES], uint8_t out[VSD_OUT_BYTES])
+uint32_t viterbiStaticDecoder(const uint8_t in[VSD_IN_BYTES], uint8_t out[VSD_OUT_BYTES])
 {
     const uint32_t infinity = UINT32_MAX;
 
@@ -165,4 +165,6 @@ void viterbiStaticDecoder(const uint8_t in[VSD_IN_BYTES], uint8_t out[VSD_OUT_BY
         setOutBit(out, outBit, decodedBit);
         state = (int32_t)survivors[outBit][state];
     }
+
+    return bestMetric;
 }
