@@ -12,6 +12,7 @@
  * =======================================================================
  */
 
+#include <stdbool.h>
 #include <stdint.h>
 
 
@@ -30,12 +31,21 @@
 #define VSD_INVERT_G1         0
 #define VSD_INVERT_G2         1
 
+#define VGBD_MAX_DECODERS         3
+#define VGBD_MAX_SYMBOLS_PER_STEP 5
+
 
 /* =======================================================================
  * [TYPEDEF]
  * =======================================================================
  */
 
+typedef struct vgd_generator {
+    uint32_t poly;    //< Generator polynomial (LSB is the most recent bit)
+    bool isInverted;  //< Indicates if the output branch is inverted
+} vgd_generator_t;
+
+typedef void* vgbd_ctx_t;
 
 /* =======================================================================
  * [EXTERNAL DATA DECLARATION]
@@ -50,5 +60,17 @@
  */
 
 uint32_t viterbiStaticDecoder(const uint8_t in[VSD_IN_BYTES], uint8_t out[VSD_OUT_BYTES]);
+
+int32_t viterbiGenericBlockDecoderInit(
+        vgbd_ctx_t* vgbdCtx,
+        const uint8_t symbolsPerInput,
+        const uint8_t bitsPerStep,
+        const uint8_t symbolsPerStep,
+        const uint8_t constraintLength,
+        const vgd_generator_t* symbolGenerators,
+        const uint8_t* workingBuffer,
+        const uint32_t bufferSize);
+
+uint32_t viterbiGenericBlockDecoder(const vgbd_ctx_t* vgbdCtx, const uint8_t* in, uint8_t* out);
 
 #endif
