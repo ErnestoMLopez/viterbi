@@ -32,7 +32,7 @@
 #define VSD_INVERT_G2         1
 
 #define VGBD_MAX_DECODERS         3
-#define VGBD_MAX_SYMBOLS_PER_STEP 5
+#define VGBD_MAX_SYMBOLS_PER_STEP 8
 
 
 /* =======================================================================
