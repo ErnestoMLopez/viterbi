@@ -73,6 +73,25 @@ static inline uint8_t parity8(uint8_t x)
     return x & 1;
 }
 
+static inline uint8_t getInputSymbols(const uint8_t* in, const uint32_t step, const uint32_t symbolsPerStep)
+{
+    uint32_t i;
+    uint32_t symbol = 0;
+    uint8_t symbols = 0;
+
+    for (i = 0; i < symbolsPerStep; i++) {
+
+        symbol = symbolsPerStep * step + i;
+
+        const uint32_t byte   = symbol >> 3;
+        const uint32_t bitpos = 7 - (symbol & 7);
+
+        symbols |= ((in[byte] >> bitpos) & 1) << i;
+    }
+
+    return symbols;
+}
+
 static inline uint8_t getInputSymbol(const uint8_t in[VSD_IN_BYTES], const uint32_t symbol)
 {
     const uint32_t byte   = symbol >> 3;
@@ -93,6 +112,22 @@ static inline void setOutBit(uint8_t out[VSD_OUT_BYTES], const uint32_t bit, con
     out[byte] |= (1 << bitpos);
 }
 
+static inline void setOutBits(uint8_t* out, const uint32_t step, const uint8_t bitsPerStep, const uint8_t decodedBits)
+{
+    uint8_t i;
+    uint8_t bit;
+
+    for (i = 0; i < bitsPerStep; i++) {
+
+        bit = bitsPerStep * step + i;
+
+        const uint32_t byte   = bit >> 3;
+        const uint32_t bitpos = 7 - (bit & 7);
+
+        out[byte] |= (((decodedBits >> i) & 1) << bitpos);
+    }
+}
+
 static inline uint8_t encodeBit(uint32_t state, uint8_t bit)
 {
     const uint32_t reg = ((state << 1) | bit) & VSD_SHIFT_REGISTER_MASK;
@@ -102,10 +137,53 @@ static inline uint8_t encodeBit(uint32_t state, uint8_t bit)
     return g1 | (g2 << 1);
 }
 
+
+static inline uint8_t encodeBits(
+        uint32_t state,
+        const uint8_t bits,
+        const uint8_t bitsPerStep,
+        const uint8_t symbolsPerStep,
+        const uint8_t constraintLength,
+        const vgd_generator_t* symbolGen)
+{
+    const uint32_t shiftRegisterMask = ((1 << constraintLength) - 1);
+    const uint32_t reg               = ((state << bitsPerStep) | bits) & shiftRegisterMask;
+
+    uint8_t symbols = 0;
+    uint8_t i;
+
+    for (i = 0; i < symbolsPerStep; i++) {
+        const uint8_t symbol = parity8(reg & symbolGen[i].poly) ^ symbolGen[i].isInverted;
+        symbols |= symbol << i;
+    }
+
+    return symbols;
+}
+
+static inline uint8_t calculateError(const uint8_t symbols, const uint8_t outSymbols)
+{
+    uint8_t bitErrors = symbols ^ outSymbols;
+    uint8_t errors    = 0;
+
+    while (bitErrors) {
+        bitErrors &= (bitErrors - 1);
+        errors++;
+    }
+
+    return errors;
+}
+
 static inline uint32_t getNextState(const uint32_t state, const uint8_t newBit)
 {
     return ((state << 1) | newBit) & VSD_STATE_MASK;
 }
+
+static inline uint8_t getLastBitsFromState(const uint32_t state, const uint8_t bitsPerStep)
+{
+    const uint32_t lastBitsMask = ((1 << bitsPerStep) - 1);
+    return state & lastBitsMask;
+}
+
 
 /* =======================================================================
  * [PUBLIC INTERFACE FUNCTIONS DEFINITION]
@@ -240,11 +318,89 @@ int32_t viterbiGenericBlockDecoderInit(
 }
 
 
-uint32_t viterbiGenericBlockDecoder(const vgbd_ctx_t* vgbdCtx, const uint8_t* in, uint8_t* out)
+int32_t viterbiGenericBlockDecoder(const vgbd_ctx_t vgbdCtx, const uint8_t* in, uint8_t* out)
 {
-    vgbd_ctrl_t* vgdbCtrl = (vgbd_ctrl_t*)vgbdCtx;
+    if (vgbdCtx == NULL || in == NULL || out == NULL) {
+        return -1;
+    }
 
-    // TODO: Implement generic decoder
+    vgbd_ctrl_t* vgbdCtrl = (vgbd_ctrl_t*)vgbdCtx;
 
-    return 0;
+    const uint32_t infinity    = UINT32_MAX;
+    const int32_t stateCount   = 1 << ((vgbdCtrl->constraintLength - 1) * vgbdCtrl->bitsPerStep);
+    const int32_t stepsCount   = vgbdCtrl->symbolsPerInput / vgbdCtrl->symbolsPerStep;
+    const uint32_t outBytes    = (vgbdCtrl->bitsPerStep * stepsCount + 7) / 8;
+    const uint8_t maxBitsValue = (1 << vgbdCtrl->bitsPerStep) - 1;
+
+    uint32_t(*survivors)[stateCount] = (uint32_t(*)[stateCount])vgbdCtrl->survivors;
+    uint32_t* pathMetricsCurr        = vgbdCtrl->pathMetricsCurr;
+    uint32_t* pathMetricsNext        = vgbdCtrl->pathMetricsNext;
+
+    int32_t state;
+    int32_t step;
+    uint8_t bits;
+
+
+    memset(pathMetricsCurr, (int)infinity, sizeof(uint32_t) * stateCount);
+    pathMetricsCurr[0] = 0;
+
+    for (step = 0; step < stepsCount; step++) {
+        memset(pathMetricsNext, (int)infinity, sizeof(uint32_t) * stateCount);
+
+        const uint8_t symbols = getInputSymbols(in, step, vgbdCtrl->symbolsPerStep);
+
+        for (state = 0; state < stateCount; state++) {
+            uint32_t currMetric = pathMetricsCurr[state];
+
+            if (currMetric == infinity) {
+                continue;
+            }
+
+            for (bits = 0; bits <= maxBitsValue; bits++) {
+
+                const uint32_t nextState = getNextState(state, bits);
+                const uint8_t outSymbols = encodeBits(
+                        state,
+                        bits,
+                        vgbdCtrl->bitsPerStep,
+                        vgbdCtrl->symbolsPerStep,
+                        vgbdCtrl->constraintLength,
+                        vgbdCtrl->symbolGenerators);
+                const uint32_t errors = calculateError(symbols, outSymbols);
+
+                const uint32_t newMetric = currMetric + errors;
+
+                if (newMetric < pathMetricsNext[nextState]) {
+                    pathMetricsNext[nextState] = newMetric;
+                    survivors[step][nextState] = state;
+                }
+            }
+        }
+
+        for (state = 0; state < stateCount; state++) {
+            pathMetricsCurr[state] = pathMetricsNext[state];
+        }
+    }
+
+    uint32_t bestMetric = infinity;
+    uint32_t bestState  = 0;
+
+    for (state = 0; state < stateCount; state++) {
+        if (pathMetricsCurr[state] < bestMetric) {
+            bestMetric = pathMetricsCurr[state];
+            bestState  = state;
+        }
+    }
+
+    state = (int32_t)bestState;
+
+    memset(out, 0, outBytes);
+
+    for (step = stepsCount - 1; step >= 0; step--) {
+        const uint32_t decodedBits = getLastBitsFromState(state, vgbdCtrl->bitsPerStep);
+        setOutBits(out, step, vgbdCtrl->bitsPerStep, decodedBits);
+        state = (int32_t)survivors[step][state];
+    }
+
+    return (int32_t)bestMetric;
 }

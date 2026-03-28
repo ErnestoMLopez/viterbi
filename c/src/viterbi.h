@@ -71,6 +71,6 @@ int32_t viterbiGenericBlockDecoderInit(
         const uint8_t* workingBuffer,
         const uint32_t bufferSize);
 
-uint32_t viterbiGenericBlockDecoder(const vgbd_ctx_t* vgbdCtx, const uint8_t* in, uint8_t* out);
+int32_t viterbiGenericBlockDecoder(const vgbd_ctx_t vgbdCtx, const uint8_t* in, uint8_t* out);
 
 #endif
