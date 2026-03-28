@@ -71,9 +71,9 @@ void processTestResults(const uint8_t* output, uint32_t bitErrors)
     printResults(diffBits, bitErrors);
 }
 
-void test1(void)
+void vsdTest1(void)
 {
-    printf("Test 1: Input with 0 errors.\n");
+    printf("VSD Test1: Input with 0 errors.\n");
 
     uint8_t input[VSD_IN_BYTES];
     uint8_t output[VSD_OUT_BYTES];
@@ -85,9 +85,9 @@ void test1(void)
     processTestResults(output, bitErrors);
 }
 
-void test2(void)
+void vsdTest2(void)
 {
-    printf("Test 2: Input with 1 bit error.\n");
+    printf("VSD Test2: Input with 1 bit error.\n");
 
     uint8_t input[VSD_IN_BYTES];
     uint8_t output[VSD_OUT_BYTES];
@@ -102,9 +102,9 @@ void test2(void)
     processTestResults(output, bitErrors);
 }
 
-void test3(void)
+void vsdTest3(void)
 {
-    printf("Test 3: Input with 30 bit errors (1 per byte).\n");
+    printf("VSD Test3: Input with 30 bit errors (1 per byte).\n");
 
     uint8_t input[VSD_IN_BYTES];
     uint8_t output[VSD_OUT_BYTES];
@@ -122,9 +122,9 @@ void test3(void)
     processTestResults(output, bitErrors);
 }
 
-void test4(void)
+void vsdTest4(void)
 {
-    printf("Test 4: Input with 60 bit errors (2 per byte).\n");
+    printf("VSD Test4: Input with 60 bit errors (2 per byte).\n");
 
     uint8_t input[VSD_IN_BYTES];
     uint8_t output[VSD_OUT_BYTES];
@@ -142,9 +142,9 @@ void test4(void)
     processTestResults(output, bitErrors);
 }
 
-void test5(void)
+void vsdTest5(void)
 {
-    printf("Test 5: Input with 5 bit errors (burst of 5).\n");
+    printf("VSD Test5: Input with 5 bit errors (burst of 5).\n");
 
     uint8_t input[VSD_IN_BYTES];
     uint8_t output[VSD_OUT_BYTES];
@@ -159,9 +159,9 @@ void test5(void)
     processTestResults(output, bitErrors);
 }
 
-void test6(void)
+void vsdTest6(void)
 {
-    printf("Test 5: Input with 6 bit errors (burst of 6).\n");
+    printf("VSD Test5: Input with 6 bit errors (burst of 6).\n");
 
     uint8_t input[VSD_IN_BYTES];
     uint8_t output[VSD_OUT_BYTES];
@@ -176,12 +176,41 @@ void test6(void)
     processTestResults(output, bitErrors);
 }
 
+void vgbdTest1(void)
+{
+    printf("VGDB Test1: Input with 0 errors.\n");
+
+    uint8_t input[VSD_IN_BYTES];
+    uint8_t output[VSD_OUT_BYTES];
+    int32_t ret;
+
+    memcpy(input, inputSymbols, sizeof(inputSymbols));
+
+    vgbd_ctx_t vgbdCtx;
+    vgd_generator_t symbolGen[2] = { [0] = { .poly = VSD_POLY_G1, .isInverted = VSD_INVERT_G1 },
+                                     [1] = { .poly = VSD_POLY_G2, .isInverted = VSD_INVERT_G2 } };
+    uint8_t buffer[31232];
+
+    ret = viterbiGenericBlockDecoderInit(&vgbdCtx, VSD_IN_SYMBOLS, 1, 2, 7, symbolGen, buffer, 31232);
+
+    if (ret < 0) {
+        printf("VGDB test error at initialization\n");
+        return;
+    }
+
+    uint32_t bitErrors = viterbiGenericBlockDecoder(vgbdCtx, input, output);
+
+    processTestResults(output, bitErrors);
+}
+
 int main(void)
 {
-    test1();
-    test2();
-    test3();
-    test4();
-    test5();
-    test6();
+    vsdTest1();
+    vsdTest2();
+    vsdTest3();
+    vsdTest4();
+    vsdTest5();
+    vsdTest6();
+
+    vgbdTest1();
 }
