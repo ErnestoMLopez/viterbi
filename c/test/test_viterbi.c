@@ -47,20 +47,24 @@ void printBitsComparison(const uint8_t* output)
     printf("\n");
 }
 
-void printResults(int diffBits, unsigned int errorsDetected)
+void printResults(const char* title, int diffBits, unsigned int errorsDetected)
 {
+    printf("--------------------------------------------------------------------------------\n");
+    printf("%s\n", title);
+
     if (diffBits == 0) {
-        printf("Result: OK\n");
+        printf("Result: \033[32mOK\033[0m\n");
         printf(" >> Output bit sequence matches expected sequence\n");
         printf(" >> %u bit errors detected\n", errorsDetected);
     } else {
-        printf("Result: FAIL\n");
+        printf("Result: \033[31mFAIL\033[0m\n");
         printf(" >> %d different bits.\n", diffBits);
         printf(" >> %u bit errors detected\n", errorsDetected);
     }
+    printf("--------------------------------------------------------------------------------\n");
 }
 
-void processTestResults(const uint8_t* output, uint32_t bitErrors)
+void processTestResults(const char* title, const uint8_t* output, uint32_t bitErrors)
 {
 #ifdef VERBOSE_OUTPUT
     printBitsComparison(output);
@@ -68,12 +72,12 @@ void processTestResults(const uint8_t* output, uint32_t bitErrors)
 
     int diffBits = calculateBitErrors(output);
 
-    printResults(diffBits, bitErrors);
+    printResults(title, diffBits, bitErrors);
 }
 
 void vsdTest1(void)
 {
-    printf("VSD Test1: Input with 0 errors.\n");
+    const char* title = "VSD Test1 : Input with 0 errors.";
 
     uint8_t input[VSD_IN_BYTES];
     uint8_t output[VSD_OUT_BYTES];
@@ -82,12 +86,12 @@ void vsdTest1(void)
 
     uint32_t bitErrors = viterbiStaticDecoder(input, output);
 
-    processTestResults(output, bitErrors);
+    processTestResults(title, output, bitErrors);
 }
 
 void vsdTest2(void)
 {
-    printf("VSD Test2: Input with 1 bit error.\n");
+    const char* title = "VSD Test2: Input with 1 bit error.";
 
     uint8_t input[VSD_IN_BYTES];
     uint8_t output[VSD_OUT_BYTES];
@@ -99,12 +103,12 @@ void vsdTest2(void)
 
     uint32_t bitErrors = viterbiStaticDecoder(input, output);
 
-    processTestResults(output, bitErrors);
+    processTestResults(title, output, bitErrors);
 }
 
 void vsdTest3(void)
 {
-    printf("VSD Test3: Input with 30 bit errors (1 per byte).\n");
+    const char* title = "VSD Test3: Input with 30 bit errors (1 per byte).";
 
     uint8_t input[VSD_IN_BYTES];
     uint8_t output[VSD_OUT_BYTES];
@@ -119,12 +123,12 @@ void vsdTest3(void)
 
     uint32_t bitErrors = viterbiStaticDecoder(input, output);
 
-    processTestResults(output, bitErrors);
+    processTestResults(title, output, bitErrors);
 }
 
 void vsdTest4(void)
 {
-    printf("VSD Test4: Input with 60 bit errors (2 per byte).\n");
+    const char* title = "VSD Test4: Input with 60 bit errors (2 per byte).";
 
     uint8_t input[VSD_IN_BYTES];
     uint8_t output[VSD_OUT_BYTES];
@@ -139,12 +143,12 @@ void vsdTest4(void)
 
     uint32_t bitErrors = viterbiStaticDecoder(input, output);
 
-    processTestResults(output, bitErrors);
+    processTestResults(title, output, bitErrors);
 }
 
 void vsdTest5(void)
 {
-    printf("VSD Test5: Input with 5 bit errors (burst of 5).\n");
+    const char* title = "VSD Test5: Input with 5 bit errors (burst of 5).";
 
     uint8_t input[VSD_IN_BYTES];
     uint8_t output[VSD_OUT_BYTES];
@@ -156,12 +160,12 @@ void vsdTest5(void)
 
     uint32_t bitErrors = viterbiStaticDecoder(input, output);
 
-    processTestResults(output, bitErrors);
+    processTestResults(title, output, bitErrors);
 }
 
 void vsdTest6(void)
 {
-    printf("VSD Test5: Input with 6 bit errors (burst of 6).\n");
+    const char* title = "VSD Test5: Input with 6 bit errors (burst of 6).";
 
     uint8_t input[VSD_IN_BYTES];
     uint8_t output[VSD_OUT_BYTES];
@@ -173,12 +177,12 @@ void vsdTest6(void)
 
     uint32_t bitErrors = viterbiStaticDecoder(input, output);
 
-    processTestResults(output, bitErrors);
+    processTestResults(title, output, bitErrors);
 }
 
 void vgbdTest1(void)
 {
-    printf("VGDB Test1: Input with 0 errors.\n");
+    const char* title = "VGDB Test1: Input with 0 errors.";
 
     uint8_t input[VSD_IN_BYTES];
     uint8_t output[VSD_OUT_BYTES];
@@ -200,7 +204,7 @@ void vgbdTest1(void)
 
     uint32_t bitErrors = viterbiGenericBlockDecoder(vgbdCtrl, input, output);
 
-    processTestResults(output, bitErrors);
+    processTestResults(title, output, bitErrors);
 }
 
 int main(void)
