@@ -326,7 +326,7 @@ int32_t viterbiGenericBlockDecoder(const vgbd_ctrl_t* vgbdCtrl, const uint8_t* i
     }
 
     const uint32_t infinity    = UINT32_MAX;
-    const int32_t stateCount   = 1 << ((vgbdCtrl->constraintLength - 1) * vgbdCtrl->bitsPerStep);
+    const uint32_t stateCount  = 1 << ((vgbdCtrl->constraintLength - 1) * vgbdCtrl->bitsPerStep);
     const int32_t stepsCount   = vgbdCtrl->symbolsPerInput / vgbdCtrl->symbolsPerStep;
     const uint32_t outBytes    = (vgbdCtrl->bitsPerStep * stepsCount + 7) / 8;
     const uint8_t maxBitsValue = (1 << vgbdCtrl->bitsPerStep) - 1;
@@ -335,7 +335,7 @@ int32_t viterbiGenericBlockDecoder(const vgbd_ctrl_t* vgbdCtrl, const uint8_t* i
     uint32_t* pathMetricsCurr         = vgbdCtrl->pathMetricsCurr;
     uint32_t* pathMetricsNext         = vgbdCtrl->pathMetricsNext;
 
-    int32_t state;
+    uint32_t state;
     int32_t step;
     uint8_t bits;
 
@@ -391,14 +391,14 @@ int32_t viterbiGenericBlockDecoder(const vgbd_ctrl_t* vgbdCtrl, const uint8_t* i
         }
     }
 
-    state = (int32_t)bestState;
+    state = bestState;
 
     memset(out, 0, outBytes);
 
     for (step = stepsCount - 1; step >= 0; step--) {
         const uint32_t decodedBits = getLastBitsFromState(state, vgbdCtrl->bitsPerStep);
         setOutBits(out, step, vgbdCtrl->bitsPerStep, decodedBits);
-        state = (int32_t)survivors[step][state];
+        state = survivors[step][state];
     }
 
     return (int32_t)bestMetric;
