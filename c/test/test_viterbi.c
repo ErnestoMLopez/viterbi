@@ -186,19 +186,19 @@ void vgbdTest1(void)
 
     memcpy(input, inputSymbols, sizeof(inputSymbols));
 
-    vgbd_ctx_t vgbdCtx;
+    vgbd_ctrl_t* vgbdCtrl;
     vgd_generator_t symbolGen[2] = { [0] = { .poly = VSD_POLY_G1, .isInverted = VSD_INVERT_G1 },
                                      [1] = { .poly = VSD_POLY_G2, .isInverted = VSD_INVERT_G2 } };
-    uint8_t buffer[31232];
+    uint8_t buffer[31232]        = { 0 };
 
-    ret = viterbiGenericBlockDecoderInit(&vgbdCtx, VSD_IN_SYMBOLS, 1, 2, 7, symbolGen, buffer, 31232);
+    ret = viterbiGenericBlockDecoderInit(&vgbdCtrl, VSD_IN_SYMBOLS, 1, 2, 7, symbolGen, buffer, 31232);
 
     if (ret < 0) {
         printf("VGDB test error at initialization\n");
         return;
     }
 
-    uint32_t bitErrors = viterbiGenericBlockDecoder(vgbdCtx, input, output);
+    uint32_t bitErrors = viterbiGenericBlockDecoder(vgbdCtrl, input, output);
 
     processTestResults(output, bitErrors);
 }

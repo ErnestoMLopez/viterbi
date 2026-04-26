@@ -45,7 +45,8 @@ typedef struct vgd_generator {
     bool isInverted;  //< Indicates if the output branch is inverted
 } vgd_generator_t;
 
-typedef void* vgbd_ctx_t;
+typedef struct vgbd_ctrl vgbd_ctrl_t;
+
 
 /* =======================================================================
  * [EXTERNAL DATA DECLARATION]
@@ -62,7 +63,7 @@ typedef void* vgbd_ctx_t;
 uint32_t viterbiStaticDecoder(const uint8_t in[VSD_IN_BYTES], uint8_t out[VSD_OUT_BYTES]);
 
 int32_t viterbiGenericBlockDecoderInit(
-        vgbd_ctx_t* vgbdCtx,
+        vgbd_ctrl_t** vgbdCtrl,
         const uint8_t symbolsPerInput,
         const uint8_t bitsPerStep,
         const uint8_t symbolsPerStep,
@@ -71,6 +72,6 @@ int32_t viterbiGenericBlockDecoderInit(
         const uint8_t* workingBuffer,
         const uint32_t bufferSize);
 
-int32_t viterbiGenericBlockDecoder(const vgbd_ctx_t vgbdCtx, const uint8_t* in, uint8_t* out);
+int32_t viterbiGenericBlockDecoder(const vgbd_ctrl_t* vgbdCtrl, const uint8_t* in, uint8_t* out);
 
 #endif

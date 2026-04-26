@@ -29,7 +29,19 @@
  * =======================================================================
  */
 
-typedef struct vgbd_ctrl {
+
+/* =======================================================================
+ * [FUNCTION  PROTOTYPES]
+ * =======================================================================
+ */
+
+
+/* =======================================================================
+ * [INTERNAL DATA DEFINITION]
+ * =======================================================================
+ */
+
+struct vgbd_ctrl {
     uint8_t symbolsPerInput;                                      //< Symbols count at input buffer (N)
     uint8_t bitsPerStep;                                          //< Bits input to the encoder at each step (k)
     uint8_t symbolsPerStep;                                       //< Symbols output by the encoder at each step (n)
@@ -38,17 +50,7 @@ typedef struct vgbd_ctrl {
     uint32_t* survivors;        //< Buffer for surviving paths. Must be of size 4*N*(k/n)*(2^((K-1)*k))
     uint32_t* pathMetricsCurr;  //< Buffer for current metrics. Must be of size 4*(2^((K-1)*k))
     uint32_t* pathMetricsNext;  //< Buffer for next step metrics. Must be of size 4*(2^((K-1)*k))
-} vgbd_ctrl_t;
-
-/* =======================================================================
- * [FUNCTION  PROTOTYPES]
- * =======================================================================
- */
-
-/* =======================================================================
- * [INTERNAL DATA DEFINITION]
- * =======================================================================
- */
+};
 
 uint8_t vgbdCount = 0;
 vgbd_ctrl_t vgbdTable[VGBD_MAX_DECODERS];
@@ -265,7 +267,7 @@ uint32_t viterbiStaticDecoder(const uint8_t in[VSD_IN_BYTES], uint8_t out[VSD_OU
 
 
 int32_t viterbiGenericBlockDecoderInit(
-        vgbd_ctx_t* vgbdCtx,
+        vgbd_ctrl_t** vgbdCtrl,
         const uint8_t symbolsPerInput,
         const uint8_t bitsPerStep,
         const uint8_t symbolsPerStep,
@@ -274,10 +276,10 @@ int32_t viterbiGenericBlockDecoderInit(
         const uint8_t* workingBuffer,
         const uint32_t bufferSize)
 {
-    *vgbdCtx = NULL;
-
     if (++vgbdCount >= VGBD_MAX_DECODERS) {
         fprintf(stderr, "Viterbi generic decoders limit reached (%u maximum)\n", VGBD_MAX_DECODERS);
+        vgbdCount--;
+        *vgbdCtrl = NULL;
         return -1;
     }
 
@@ -296,35 +298,32 @@ int32_t viterbiGenericBlockDecoderInit(
         return -3;
     }
 
-    vgbd_ctrl_t* vgdbCtrl = &vgbdTable[vgbdCount];
     uint8_t i;
 
-    vgdbCtrl->symbolsPerInput  = symbolsPerInput;
-    vgdbCtrl->bitsPerStep      = bitsPerStep;
-    vgdbCtrl->symbolsPerStep   = symbolsPerStep;
-    vgdbCtrl->constraintLength = constraintLength;
+    *vgbdCtrl = &vgbdTable[vgbdCount];
+
+    (*vgbdCtrl)->symbolsPerInput  = symbolsPerInput;
+    (*vgbdCtrl)->bitsPerStep      = bitsPerStep;
+    (*vgbdCtrl)->symbolsPerStep   = symbolsPerStep;
+    (*vgbdCtrl)->constraintLength = constraintLength;
 
     for (i = 0; i < symbolsPerStep; i++) {
-        vgdbCtrl->symbolGenerators[i] = symbolGenerators[i];
+        (*vgbdCtrl)->symbolGenerators[i] = symbolGenerators[i];
     }
 
-    vgdbCtrl->survivors       = (uint32_t*)workingBuffer;
-    vgdbCtrl->pathMetricsCurr = (uint32_t*)(workingBuffer + survivorsBufferSize);
-    vgdbCtrl->pathMetricsNext = (uint32_t*)(workingBuffer + survivorsBufferSize + pathMetricsBufferSize);
-
-    *vgbdCtx = vgdbCtrl;
+    (*vgbdCtrl)->survivors       = (uint32_t*)workingBuffer;
+    (*vgbdCtrl)->pathMetricsCurr = (uint32_t*)(workingBuffer + survivorsBufferSize);
+    (*vgbdCtrl)->pathMetricsNext = (uint32_t*)(workingBuffer + survivorsBufferSize + pathMetricsBufferSize);
 
     return 0;
 }
 
 
-int32_t viterbiGenericBlockDecoder(const vgbd_ctx_t vgbdCtx, const uint8_t* in, uint8_t* out)
+int32_t viterbiGenericBlockDecoder(const vgbd_ctrl_t* vgbdCtrl, const uint8_t* in, uint8_t* out)
 {
-    if (vgbdCtx == NULL || in == NULL || out == NULL) {
+    if (vgbdCtrl == NULL || in == NULL || out == NULL) {
         return -1;
     }
-
-    vgbd_ctrl_t* vgbdCtrl = (vgbd_ctrl_t*)vgbdCtx;
 
     const uint32_t infinity    = UINT32_MAX;
     const int32_t stateCount   = 1 << ((vgbdCtrl->constraintLength - 1) * vgbdCtrl->bitsPerStep);
@@ -332,9 +331,9 @@ int32_t viterbiGenericBlockDecoder(const vgbd_ctx_t vgbdCtx, const uint8_t* in, 
     const uint32_t outBytes    = (vgbdCtrl->bitsPerStep * stepsCount + 7) / 8;
     const uint8_t maxBitsValue = (1 << vgbdCtrl->bitsPerStep) - 1;
 
-    uint32_t(*survivors)[stateCount] = (uint32_t(*)[stateCount])vgbdCtrl->survivors;
-    uint32_t* pathMetricsCurr        = vgbdCtrl->pathMetricsCurr;
-    uint32_t* pathMetricsNext        = vgbdCtrl->pathMetricsNext;
+    uint32_t (*survivors)[stateCount] = (uint32_t (*)[stateCount])vgbdCtrl->survivors;
+    uint32_t* pathMetricsCurr         = vgbdCtrl->pathMetricsCurr;
+    uint32_t* pathMetricsNext         = vgbdCtrl->pathMetricsNext;
 
     int32_t state;
     int32_t step;
