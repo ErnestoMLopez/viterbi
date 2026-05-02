@@ -21,8 +21,8 @@
  * =======================================================================
  */
 
-#define VGBD_MAX_DECODERS         6
-#define VGBD_MAX_SYMBOLS_PER_STEP 8
+#define VBD_MAX_DECODERS         6
+#define VBD_MAX_SYMBOLS_PER_STEP 8
 
 
 /* =======================================================================
@@ -35,7 +35,7 @@ typedef struct vgd_generator {
     bool isInverted;  //< Indicates if the output branch is inverted
 } vgd_generator_t;
 
-typedef struct vgbd_ctrl vgbd_ctrl_t;
+typedef struct vbd_ctrl vbd_ctrl_t;
 
 
 /* =======================================================================
@@ -50,8 +50,8 @@ typedef struct vgbd_ctrl vgbd_ctrl_t;
  * =======================================================================
  */
 
-int32_t viterbiGenericBlockDecoderInit(
-        vgbd_ctrl_t** vgbdCtrl,
+int32_t viterbiBlockDecoderInit(
+        vbd_ctrl_t** vbdCtrl,
         const uint8_t symbolsPerInput,
         const uint8_t bitsPerStep,
         const uint8_t symbolsPerStep,
@@ -60,6 +60,6 @@ int32_t viterbiGenericBlockDecoderInit(
         const uint8_t* workingBuffer,
         const uint32_t bufferSize);
 
-int32_t viterbiGenericBlockDecoder(const vgbd_ctrl_t* vgbdCtrl, const uint8_t* in, uint8_t* out);
+int32_t viterbiBlockDecoder(const vbd_ctrl_t* vbdCtrl, const uint8_t* in, uint8_t* out);
 
 #endif

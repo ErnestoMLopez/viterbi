@@ -87,7 +87,7 @@ void processTestResults(const char* title, const uint8_t* output, uint32_t bitEr
 }
 
 
-void vgbdTest1(void)
+void vbdTest1(void)
 {
     const char* title = "VGDB Test1: Input with 0 errors.";
 
@@ -97,24 +97,24 @@ void vgbdTest1(void)
 
     memcpy(input, inputSymbols, sizeof(inputSymbols));
 
-    vgbd_ctrl_t* vgbdCtrl;
+    vbd_ctrl_t* vbdCtrl;
     vgd_generator_t symbolGen[2] = { [0] = { .poly = TEST_VBD_POLY_G1, .isInverted = TEST_VBD_INVERT_G1 },
                                      [1] = { .poly = TEST_VBD_POLY_G2, .isInverted = TEST_VBD_INVERT_G2 } };
     uint8_t buffer[31232]        = { 0 };
 
-    ret = viterbiGenericBlockDecoderInit(&vgbdCtrl, TEST_VBD_IN_SYMBOLS, 1, 2, 7, symbolGen, buffer, 31232);
+    ret = viterbiBlockDecoderInit(&vbdCtrl, TEST_VBD_IN_SYMBOLS, 1, 2, 7, symbolGen, buffer, 31232);
 
     if (ret < 0) {
         printf("VGDB test error at initialization\n");
         return;
     }
 
-    uint32_t bitErrors = viterbiGenericBlockDecoder(vgbdCtrl, input, output);
+    uint32_t bitErrors = viterbiBlockDecoder(vbdCtrl, input, output);
 
     processTestResults(title, output, bitErrors);
 }
 
-void vgbdTest2(void)
+void vbdTest2(void)
 {
     const char* title = "VGDB Test2: Input with 1 bit error.";
 
@@ -127,26 +127,26 @@ void vgbdTest2(void)
     /* Inserting 1 bit error */
     input[3] ^= 0b100;
 
-    vgbd_ctrl_t* vgbdCtrl;
+    vbd_ctrl_t* vbdCtrl;
     vgd_generator_t symbolGen[2] = { [0] = { .poly = TEST_VBD_POLY_G1, .isInverted = TEST_VBD_INVERT_G1 },
                                      [1] = { .poly = TEST_VBD_POLY_G2, .isInverted = TEST_VBD_INVERT_G2 } };
     uint8_t buffer[31232]        = { 0 };
 
-    ret = viterbiGenericBlockDecoderInit(&vgbdCtrl, TEST_VBD_IN_SYMBOLS, 1, 2, 7, symbolGen, buffer, 31232);
+    ret = viterbiBlockDecoderInit(&vbdCtrl, TEST_VBD_IN_SYMBOLS, 1, 2, 7, symbolGen, buffer, 31232);
 
     if (ret < 0) {
         printf("VGDB test error at initialization\n");
         return;
     }
 
-    uint32_t bitErrors = viterbiGenericBlockDecoder(vgbdCtrl, input, output);
+    uint32_t bitErrors = viterbiBlockDecoder(vbdCtrl, input, output);
 
     processTestResults(title, output, bitErrors);
 }
 
-void vgbdTest3(void)
+void vbdTest3(void)
 {
-    const char* title = "VGBD Test3: Input with 30 bit errors (1 per byte).";
+    const char* title = "VBD Test3: Input with 30 bit errors (1 per byte).";
 
     uint8_t input[TEST_VBD_IN_BYTES];
     uint8_t output[TEST_VBD_OUT_BYTES];
@@ -160,26 +160,26 @@ void vgbdTest3(void)
         input[i] ^= 0b100;
     }
 
-    vgbd_ctrl_t* vgbdCtrl;
+    vbd_ctrl_t* vbdCtrl;
     vgd_generator_t symbolGen[2] = { [0] = { .poly = TEST_VBD_POLY_G1, .isInverted = TEST_VBD_INVERT_G1 },
                                      [1] = { .poly = TEST_VBD_POLY_G2, .isInverted = TEST_VBD_INVERT_G2 } };
     uint8_t buffer[31232]        = { 0 };
 
-    ret = viterbiGenericBlockDecoderInit(&vgbdCtrl, TEST_VBD_IN_SYMBOLS, 1, 2, 7, symbolGen, buffer, 31232);
+    ret = viterbiBlockDecoderInit(&vbdCtrl, TEST_VBD_IN_SYMBOLS, 1, 2, 7, symbolGen, buffer, 31232);
 
     if (ret < 0) {
         printf("VGDB test error at initialization\n");
         return;
     }
 
-    uint32_t bitErrors = viterbiGenericBlockDecoder(vgbdCtrl, input, output);
+    uint32_t bitErrors = viterbiBlockDecoder(vbdCtrl, input, output);
 
     processTestResults(title, output, bitErrors);
 }
 
-void vgbdTest4(void)
+void vbdTest4(void)
 {
-    const char* title = "VGBD Test4: Input with 5 bit errors (burst of 5).";
+    const char* title = "VBD Test4: Input with 5 bit errors (burst of 5).";
 
     uint8_t input[TEST_VBD_IN_BYTES];
     uint8_t output[TEST_VBD_OUT_BYTES];
@@ -190,27 +190,27 @@ void vgbdTest4(void)
     /* Inserting 5 bit error */
     input[TEST_VBD_IN_BYTES / 2] ^= 0b11111;
 
-    vgbd_ctrl_t* vgbdCtrl;
+    vbd_ctrl_t* vbdCtrl;
     vgd_generator_t symbolGen[2] = { [0] = { .poly = TEST_VBD_POLY_G1, .isInverted = TEST_VBD_INVERT_G1 },
                                      [1] = { .poly = TEST_VBD_POLY_G2, .isInverted = TEST_VBD_INVERT_G2 } };
     uint8_t buffer[31232]        = { 0 };
 
-    ret = viterbiGenericBlockDecoderInit(&vgbdCtrl, TEST_VBD_IN_SYMBOLS, 1, 2, 7, symbolGen, buffer, 31232);
+    ret = viterbiBlockDecoderInit(&vbdCtrl, TEST_VBD_IN_SYMBOLS, 1, 2, 7, symbolGen, buffer, 31232);
 
     if (ret < 0) {
         printf("VGDB test error at initialization\n");
         return;
     }
 
-    uint32_t bitErrors = viterbiGenericBlockDecoder(vgbdCtrl, input, output);
+    uint32_t bitErrors = viterbiBlockDecoder(vbdCtrl, input, output);
 
     processTestResults(title, output, bitErrors);
 }
 
 int main(void)
 {
-    vgbdTest1();
-    vgbdTest2();
-    vgbdTest3();
-    vgbdTest4();
+    vbdTest1();
+    vbdTest2();
+    vbdTest3();
+    vbdTest4();
 }
