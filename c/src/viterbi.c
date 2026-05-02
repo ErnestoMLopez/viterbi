@@ -75,14 +75,13 @@ static inline uint32_t parity32(uint32_t x)
 
 static inline uint8_t getInputSymbols(const uint8_t* in, const uint32_t step, const uint32_t symbolsPerStep)
 {
+    const uint32_t symbolStart = symbolsPerStep * step;
+    uint8_t symbols            = 0;
     uint32_t i;
-    uint32_t symbol = 0;
-    uint8_t symbols = 0;
 
     for (i = 0; i < symbolsPerStep; i++) {
 
-        symbol = symbolsPerStep * step + i;
-
+        const uint32_t symbol = symbolStart + i;
         const uint32_t byte   = symbol >> 3;
         const uint32_t bitpos = 7 - (symbol & 7);
 
