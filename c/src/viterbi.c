@@ -174,9 +174,12 @@ static inline uint8_t calculateError(const uint8_t symbols, const uint8_t outSym
     return errors;
 }
 
-static inline uint32_t getNextState(const uint32_t state, const uint8_t newBit)
+static inline uint32_t
+getNextState(const uint32_t state, const uint8_t bits, const uint8_t bitsPerStep, const uint8_t constraintLength)
 {
-    return ((state << 1) | newBit) & VSD_STATE_MASK;
+    const uint32_t stateMask = ((1 << ((constraintLength - 1) * bitsPerStep)) - 1);
+
+    return ((state << bitsPerStep) | bits) & stateMask;
 }
 
 static inline uint8_t getLastBitsFromState(const uint32_t state, const uint8_t bitsPerStep)
@@ -356,7 +359,7 @@ int32_t viterbiGenericBlockDecoder(const vgbd_ctrl_t* vgbdCtrl, const uint8_t* i
 
             for (bits = 0; bits <= maxBitsValue; bits++) {
 
-                const uint32_t nextState = getNextState(state, bits);
+                const uint32_t nextState = getNextState(state, bits, vgbdCtrl->bitsPerStep, vgbdCtrl->constraintLength);
                 const uint8_t outSymbols = encodeBits(
                         state,
                         bits,
