@@ -144,11 +144,9 @@ static inline uint8_t encodeBits(
         const uint8_t bits,
         const uint8_t bitsPerStep,
         const uint8_t symbolsPerStep,
-        const uint8_t constraintLength,
         const vgd_generator_t* symbolGen)
 {
-    const uint32_t shiftRegisterMask = ((1 << constraintLength) - 1);
-    const uint32_t reg               = ((state << bitsPerStep) | bits) & shiftRegisterMask;
+    const uint32_t reg = ((state << bitsPerStep) | bits);
 
     uint8_t symbols = 0;
     uint8_t i;
@@ -362,7 +360,6 @@ int32_t viterbiGenericBlockDecoder(const vgbd_ctrl_t* vgbdCtrl, const uint8_t* i
                         bits,
                         vgbdCtrl->bitsPerStep,
                         vgbdCtrl->symbolsPerStep,
-                        vgbdCtrl->constraintLength,
                         vgbdCtrl->symbolGenerators);
                 const uint32_t errors = calculateError(symbols, outSymbols);
 
