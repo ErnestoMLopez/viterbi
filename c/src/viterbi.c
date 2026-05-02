@@ -116,13 +116,12 @@ static inline void setOutBit(uint8_t out[VSD_OUT_BYTES], const uint32_t bit, con
 
 static inline void setOutBits(uint8_t* out, const uint32_t step, const uint8_t bitsPerStep, const uint8_t decodedBits)
 {
+    const uint32_t bitStart = bitsPerStep * step;
     uint8_t i;
-    uint8_t bit;
 
     for (i = 0; i < bitsPerStep; i++) {
 
-        bit = bitsPerStep * step + i;
-
+        const uint32_t bit    = bitStart + i;
         const uint32_t byte   = bit >> 3;
         const uint32_t bitpos = 7 - (bit & 7);
 
