@@ -66,8 +66,10 @@ vgbd_ctrl_t vgbdTable[VGBD_MAX_DECODERS];
  * =======================================================================
  */
 
-static inline uint8_t parity8(uint8_t x)
+static inline uint32_t parity32(uint32_t x)
 {
+    x ^= x >> 16;
+    x ^= x >> 8;
     x ^= x >> 4;
     x ^= x >> 2;
     x ^= x >> 1;
@@ -152,7 +154,7 @@ static inline uint8_t encodeBits(
     uint8_t i;
 
     for (i = 0; i < symbolsPerStep; i++) {
-        const uint8_t symbol = parity8(reg & symbolGen[i].poly) ^ symbolGen[i].isInverted;
+        const uint8_t symbol = parity32(reg & symbolGen[i].poly) ^ symbolGen[i].isInverted;
         symbols |= symbol << i;
     }
 
