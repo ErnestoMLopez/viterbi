@@ -19,10 +19,6 @@
  * =======================================================================
  */
 
-#define VSD_NSTATES             (1 << (VSD_CONSTRAINT_LENGTH - 1))
-#define VSD_SHIFT_REGISTER_MASK ((1 << VSD_CONSTRAINT_LENGTH) - 1)
-#define VSD_STATE_MASK          ((1 << (VSD_CONSTRAINT_LENGTH - 1)) - 1)
-
 
 /* =======================================================================
  * [TYPEDEF]
@@ -96,26 +92,6 @@ static inline uint8_t getInputSymbols(const uint8_t* in, const uint32_t step, co
     return symbols;
 }
 
-static inline uint8_t getInputSymbol(const uint8_t in[VSD_IN_BYTES], const uint32_t symbol)
-{
-    const uint32_t byte   = symbol >> 3;
-    const uint32_t bitpos = 7 - (symbol & 7);
-
-    return (in[byte] >> bitpos) & 1;
-}
-
-static inline void setOutBit(uint8_t out[VSD_OUT_BYTES], const uint32_t bit, const uint8_t decodedBit)
-{
-    if (!decodedBit) {
-        return;
-    }
-
-    const uint32_t byte   = bit >> 3;
-    const uint32_t bitpos = 7 - (bit & 7);
-
-    out[byte] |= (1 << bitpos);
-}
-
 static inline void setOutBits(uint8_t* out, const uint32_t step, const uint8_t bitsPerStep, const uint8_t decodedBits)
 {
     const uint32_t bitStart = bitsPerStep * step;
@@ -130,16 +106,6 @@ static inline void setOutBits(uint8_t* out, const uint32_t step, const uint8_t b
         out[byte] |= (((decodedBits >> i) & 1) << bitpos);
     }
 }
-
-static inline uint8_t encodeBit(uint32_t state, uint8_t bit)
-{
-    const uint32_t reg = ((state << 1) | bit) & VSD_SHIFT_REGISTER_MASK;
-    const uint8_t g1   = parity8(reg & VSD_POLY_G1) ^ VSD_INVERT_G1;
-    const uint8_t g2   = parity8(reg & VSD_POLY_G2) ^ VSD_INVERT_G2;
-
-    return g1 | (g2 << 1);
-}
-
 
 static inline uint8_t encodeBits(
         uint32_t state,
@@ -193,80 +159,6 @@ static inline uint8_t getLastBitsFromState(const uint32_t state, const uint8_t b
  * [PUBLIC INTERFACE FUNCTIONS DEFINITION]
  * =======================================================================
  */
-
-
-uint32_t viterbiStaticDecoder(const uint8_t in[VSD_IN_BYTES], uint8_t out[VSD_OUT_BYTES])
-{
-    const uint32_t infinity = UINT32_MAX;
-
-    uint32_t survivors[VSD_OUT_BITS][VSD_NSTATES];
-    uint32_t pathMetricsCurr[VSD_NSTATES];
-    uint32_t pathMetricsNext[VSD_NSTATES];
-    int32_t state;
-    int32_t outBit;
-    int8_t bit;
-
-    memset(pathMetricsCurr, (int)infinity, sizeof(pathMetricsCurr));
-    pathMetricsCurr[0] = 0;
-
-    for (outBit = 0; outBit < VSD_OUT_BITS; outBit++) {
-
-        memset(pathMetricsNext, (int)infinity, sizeof(pathMetricsNext));
-
-        const uint8_t symbol1 = getInputSymbol(in, 2 * outBit);
-        const uint8_t symbol2 = getInputSymbol(in, 2 * outBit + 1);
-
-        for (state = 0; state < VSD_NSTATES; state++) {
-            uint32_t currMetric = pathMetricsCurr[state];
-
-            if (currMetric == infinity) {
-                continue;
-            }
-
-            for (bit = 0; bit <= 1; bit++) {
-                const uint32_t nextState = getNextState(state, bit);
-                const uint8_t outSymbols = encodeBit(state, bit);
-                const uint8_t outSymbol1 = outSymbols & 1;
-                const uint8_t outSymbol2 = (outSymbols >> 1) & 1;
-
-                const uint32_t errors    = (outSymbol1 != symbol1) + (outSymbol2 != symbol2);
-                const uint32_t newMetric = currMetric + errors;
-
-                if (newMetric < pathMetricsNext[nextState]) {
-                    pathMetricsNext[nextState]   = newMetric;
-                    survivors[outBit][nextState] = state;
-                }
-            }
-        }
-
-        for (state = 0; state < VSD_NSTATES; state++) {
-            pathMetricsCurr[state] = pathMetricsNext[state];
-        }
-    }
-
-    uint32_t bestMetric = infinity;
-    uint32_t bestState  = 0;
-
-    for (state = 0; state < VSD_NSTATES; state++) {
-        if (pathMetricsCurr[state] < bestMetric) {
-            bestMetric = pathMetricsCurr[state];
-            bestState  = state;
-        }
-    }
-
-    state = (int32_t)bestState;
-
-    memset(out, 0, VSD_OUT_BYTES);
-
-    for (outBit = VSD_OUT_BITS - 1; outBit >= 0; outBit--) {
-        const uint32_t decodedBit = state & 1;
-        setOutBit(out, outBit, decodedBit);
-        state = (int32_t)survivors[outBit][state];
-    }
-
-    return bestMetric;
-}
-
 
 int32_t viterbiGenericBlockDecoderInit(
         vgbd_ctrl_t** vgbdCtrl,

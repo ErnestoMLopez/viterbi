@@ -21,17 +21,7 @@
  * =======================================================================
  */
 
-#define VSD_IN_BYTES          30
-#define VSD_OUT_BYTES         15
-#define VSD_IN_SYMBOLS        240
-#define VSD_OUT_BITS          120
-#define VSD_CONSTRAINT_LENGTH 7
-#define VSD_POLY_G1           0117  // Equivalente a 0171 en convención MSB más reciente
-#define VSD_POLY_G2           0155  // Equivalente a 0133 en convención MSB más reciente
-#define VSD_INVERT_G1         0
-#define VSD_INVERT_G2         1
-
-#define VGBD_MAX_DECODERS         3
+#define VGBD_MAX_DECODERS         6
 #define VGBD_MAX_SYMBOLS_PER_STEP 8
 
 
@@ -59,8 +49,6 @@ typedef struct vgbd_ctrl vgbd_ctrl_t;
  * [PUBLIC INTERFACE PROTOTYPES]
  * =======================================================================
  */
-
-uint32_t viterbiStaticDecoder(const uint8_t in[VSD_IN_BYTES], uint8_t out[VSD_OUT_BYTES]);
 
 int32_t viterbiGenericBlockDecoderInit(
         vgbd_ctrl_t** vgbdCtrl,
