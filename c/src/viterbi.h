@@ -30,10 +30,10 @@
  * =======================================================================
  */
 
-typedef struct vgd_generator {
+typedef struct v_generator {
     uint32_t poly;    //< Generator polynomial (LSB is the most recent bit)
     bool isInverted;  //< Indicates if the output branch is inverted
-} vgd_generator_t;
+} v_generator_t;
 
 typedef struct vbd_ctrl vbd_ctrl_t;
 
@@ -56,7 +56,7 @@ int32_t viterbiBlockDecoderInit(
         const uint8_t bitsPerStep,
         const uint8_t symbolsPerStep,
         const uint8_t constraintLength,
-        const vgd_generator_t* symbolGenerators,
+        const v_generator_t* symbolGenerators,
         const uint8_t* workingBuffer,
         const uint32_t bufferSize);
 

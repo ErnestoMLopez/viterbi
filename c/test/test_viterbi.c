@@ -98,9 +98,9 @@ void vbdTest1(void)
     memcpy(input, inputSymbols, sizeof(inputSymbols));
 
     vbd_ctrl_t* vbdCtrl;
-    vgd_generator_t symbolGen[2] = { [0] = { .poly = TEST_VBD_POLY_G1, .isInverted = TEST_VBD_INVERT_G1 },
-                                     [1] = { .poly = TEST_VBD_POLY_G2, .isInverted = TEST_VBD_INVERT_G2 } };
-    uint8_t buffer[31232]        = { 0 };
+    v_generator_t symbolGen[2] = { [0] = { .poly = TEST_VBD_POLY_G1, .isInverted = TEST_VBD_INVERT_G1 },
+                                   [1] = { .poly = TEST_VBD_POLY_G2, .isInverted = TEST_VBD_INVERT_G2 } };
+    uint8_t buffer[31232]      = { 0 };
 
     ret = viterbiBlockDecoderInit(&vbdCtrl, TEST_VBD_IN_SYMBOLS, 1, 2, 7, symbolGen, buffer, 31232);
 
@@ -128,9 +128,9 @@ void vbdTest2(void)
     input[3] ^= 0b100;
 
     vbd_ctrl_t* vbdCtrl;
-    vgd_generator_t symbolGen[2] = { [0] = { .poly = TEST_VBD_POLY_G1, .isInverted = TEST_VBD_INVERT_G1 },
-                                     [1] = { .poly = TEST_VBD_POLY_G2, .isInverted = TEST_VBD_INVERT_G2 } };
-    uint8_t buffer[31232]        = { 0 };
+    v_generator_t symbolGen[2] = { [0] = { .poly = TEST_VBD_POLY_G1, .isInverted = TEST_VBD_INVERT_G1 },
+                                   [1] = { .poly = TEST_VBD_POLY_G2, .isInverted = TEST_VBD_INVERT_G2 } };
+    uint8_t buffer[31232]      = { 0 };
 
     ret = viterbiBlockDecoderInit(&vbdCtrl, TEST_VBD_IN_SYMBOLS, 1, 2, 7, symbolGen, buffer, 31232);
 
@@ -161,9 +161,9 @@ void vbdTest3(void)
     }
 
     vbd_ctrl_t* vbdCtrl;
-    vgd_generator_t symbolGen[2] = { [0] = { .poly = TEST_VBD_POLY_G1, .isInverted = TEST_VBD_INVERT_G1 },
-                                     [1] = { .poly = TEST_VBD_POLY_G2, .isInverted = TEST_VBD_INVERT_G2 } };
-    uint8_t buffer[31232]        = { 0 };
+    v_generator_t symbolGen[2] = { [0] = { .poly = TEST_VBD_POLY_G1, .isInverted = TEST_VBD_INVERT_G1 },
+                                   [1] = { .poly = TEST_VBD_POLY_G2, .isInverted = TEST_VBD_INVERT_G2 } };
+    uint8_t buffer[31232]      = { 0 };
 
     ret = viterbiBlockDecoderInit(&vbdCtrl, TEST_VBD_IN_SYMBOLS, 1, 2, 7, symbolGen, buffer, 31232);
 
@@ -191,9 +191,9 @@ void vbdTest4(void)
     input[TEST_VBD_IN_BYTES / 2] ^= 0b11111;
 
     vbd_ctrl_t* vbdCtrl;
-    vgd_generator_t symbolGen[2] = { [0] = { .poly = TEST_VBD_POLY_G1, .isInverted = TEST_VBD_INVERT_G1 },
-                                     [1] = { .poly = TEST_VBD_POLY_G2, .isInverted = TEST_VBD_INVERT_G2 } };
-    uint8_t buffer[31232]        = { 0 };
+    v_generator_t symbolGen[2] = { [0] = { .poly = TEST_VBD_POLY_G1, .isInverted = TEST_VBD_INVERT_G1 },
+                                   [1] = { .poly = TEST_VBD_POLY_G2, .isInverted = TEST_VBD_INVERT_G2 } };
+    uint8_t buffer[31232]      = { 0 };
 
     ret = viterbiBlockDecoderInit(&vbdCtrl, TEST_VBD_IN_SYMBOLS, 1, 2, 7, symbolGen, buffer, 31232);
 
