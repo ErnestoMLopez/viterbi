@@ -49,9 +49,9 @@ struct vbd_ctrl {
     uint8_t bitsPerStep;       //< Bits input to the encoder at each step (k)
     uint8_t symbolsPerStep;    //< Symbols output by the encoder at each step (n)
     uint8_t constraintLength;  //< Constraint length (K)
-    int32_t totalStates;       //< Number of states in the trellis (2^((K-1)*k))
-    int32_t totalSteps;        //< Number of total steps for block input (N/n)
-    int32_t outBytes;          //< Number of bytes needed to store the decoded output ((k*(N/n)/8)
+    uint32_t totalStates;      //< Number of states in the trellis (2^((K-1)*k))
+    uint32_t totalSteps;       //< Number of total steps for block input (N/n)
+    uint32_t outBytes;         //< Number of bytes needed to store the decoded output ((k*(N/n)/8)
     uint8_t maxBitsValue;      //< Maximum value for the bits input to the encoder at each step (2^k - 1)
     v_generator_t symbolGenerators[VBD_MAX_SYMBOLS_PER_STEP];  //< Generators for each symbol
     v_state_t* survivors;   //< Buffer for surviving paths. Must be of size sizeof(v_state_t)*N*(k/n)*(2^((K-1)*k))
