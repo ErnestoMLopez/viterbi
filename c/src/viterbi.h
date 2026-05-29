@@ -24,7 +24,7 @@
 /**
  * @brief Maximum number of Viterbi decoder instances that can be initialized simultaneously.
  */
-#define VBD_MAX_DECODERS 6
+#define VBD_MAX_DECODERS 2
 
 
 /* =======================================================================
@@ -99,6 +99,15 @@ int32_t viterbiBlockDecoderInit(
         const v_generator_t* symbolGenerators,
         const uint8_t* workingBuffer,
         const uint32_t bufferSize);
+
+/**
+ * @brief Frees a Viterbi block decoder instance.
+ *
+ * @param vbdCtrl Pointer to the control structure for the decoder instance to be freed.
+ * @return 0  = success.
+ *         -1 = invalid argument.
+ */
+int32_t viterbiBlockDecoderFree(vbd_ctrl_t* vbdCtrl);
 
 /**
  * @brief Decodes a block of symbols using the Viterbi algorithm.

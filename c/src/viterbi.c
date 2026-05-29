@@ -44,6 +44,7 @@
  */
 
 struct vbd_ctrl {
+    int8_t vbdId;              // ID of the decoder instance (index in the ::vbdTable)
     uint8_t symbolsPerInput;   //< Symbols count at input buffer (N)
     uint8_t bitsPerStep;       //< Bits input to the encoder at each step (k)
     uint8_t symbolsPerStep;    //< Symbols output by the encoder at each step (n)
@@ -58,8 +59,8 @@ struct vbd_ctrl {
     uint32_t* nextMetrics;  //< Buffer for next step metrics. Must be of size 4*(2^((K-1)*k))
 };
 
-uint8_t vbdCount = 0;
-vbd_ctrl_t vbdTable[VBD_MAX_DECODERS];
+uint8_t vbdCount                      = 0;
+vbd_ctrl_t vbdTable[VBD_MAX_DECODERS] = { { .vbdId = -1 } };
 
 
 /* =======================================================================
@@ -180,9 +181,8 @@ int32_t viterbiBlockDecoderInit(
         const uint8_t* workingBuffer,
         const uint32_t bufferSize)
 {
-    if (++vbdCount >= VBD_MAX_DECODERS) {
+    if (vbdCount >= VBD_MAX_DECODERS) {
         fprintf(stderr, "Viterbi generic decoders limit reached (%u maximum)\n", VBD_MAX_DECODERS);
-        vbdCount--;
         *vbdCtrl = NULL;
         return -1;
     }
@@ -205,7 +205,13 @@ int32_t viterbiBlockDecoderInit(
 
     uint8_t i;
 
-    *vbdCtrl = &vbdTable[vbdCount];
+    for (i = 0; i < VBD_MAX_DECODERS; i++) {
+        if (vbdTable[i].vbdId == -1) {
+            break;
+        }
+    }
+
+    *vbdCtrl = &vbdTable[i];
 
     (*vbdCtrl)->symbolsPerInput  = symbolsPerInput;
     (*vbdCtrl)->bitsPerStep      = bitsPerStep;
@@ -223,6 +229,21 @@ int32_t viterbiBlockDecoderInit(
     (*vbdCtrl)->survivors   = (v_state_t*)workingBuffer;
     (*vbdCtrl)->currMetrics = (uint32_t*)(workingBuffer + survivorsBufferSize);
     (*vbdCtrl)->nextMetrics = (uint32_t*)(workingBuffer + survivorsBufferSize + pathMetricsBufferSize);
+
+    vbdCount++;
+
+    return 0;
+}
+
+
+int32_t viterbiBlockDecoderFree(vbd_ctrl_t* vbdCtrl)
+{
+    if (vbdCtrl == NULL) {
+        return -1;
+    }
+
+    vbdCtrl->vbdId = -1;
+    vbdCount--;
 
     return 0;
 }

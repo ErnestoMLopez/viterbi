@@ -111,6 +111,13 @@ void vbdTest1(void)
 
     uint32_t bitErrors = viterbiBlockDecoder(vbdCtrl, input, output);
 
+    ret = viterbiBlockDecoderFree(vbdCtrl);
+
+    if (ret < 0) {
+        printf("VGDB test error at freeing decoder instance\n");
+        return;
+    }
+
     processTestResults(title, output, bitErrors);
 }
 
@@ -140,6 +147,13 @@ void vbdTest2(void)
     }
 
     uint32_t bitErrors = viterbiBlockDecoder(vbdCtrl, input, output);
+
+    ret = viterbiBlockDecoderFree(vbdCtrl);
+
+    if (ret < 0) {
+        printf("VGDB test error at freeing decoder instance\n");
+        return;
+    }
 
     processTestResults(title, output, bitErrors);
 }
@@ -174,6 +188,13 @@ void vbdTest3(void)
 
     uint32_t bitErrors = viterbiBlockDecoder(vbdCtrl, input, output);
 
+    ret = viterbiBlockDecoderFree(vbdCtrl);
+
+    if (ret < 0) {
+        printf("VGDB test error at freeing decoder instance\n");
+        return;
+    }
+
     processTestResults(title, output, bitErrors);
 }
 
@@ -203,6 +224,13 @@ void vbdTest4(void)
     }
 
     uint32_t bitErrors = viterbiBlockDecoder(vbdCtrl, input, output);
+
+    ret = viterbiBlockDecoderFree(vbdCtrl);
+
+    if (ret < 0) {
+        printf("VGDB test error at freeing decoder instance\n");
+        return;
+    }
 
     processTestResults(title, output, bitErrors);
 }
