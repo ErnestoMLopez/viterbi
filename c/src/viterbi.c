@@ -240,10 +240,13 @@ int32_t viterbiBlockDecoder(const vbd_ctrl_t* vbdCtrl, const uint8_t* in, uint8_
     int32_t step;
     uint8_t bits;
 
-
+    /* Clean output stream and set the metrics to the maximum except for the first state as the initial state of the
+     * algorithm  */
+    memset(out, 0, outBytes);
     memset(currMetrics, (int)infinity, sizeof(uint32_t) * stateCount);
     currMetrics[0] = 0;
 
+    /* Forward processing of each step symbols */
     for (step = 0; step < stepsCount; step++) {
         memset(nextMetrics, (int)infinity, sizeof(uint32_t) * stateCount);
 
@@ -281,6 +284,7 @@ int32_t viterbiBlockDecoder(const vbd_ctrl_t* vbdCtrl, const uint8_t* in, uint8_
         }
     }
 
+    /* Search the most probable state and path at block end */
     uint32_t bestMetric = infinity;
     uint32_t bestState  = 0;
 
@@ -291,11 +295,8 @@ int32_t viterbiBlockDecoder(const vbd_ctrl_t* vbdCtrl, const uint8_t* in, uint8_
         }
     }
 
-    state = bestState;
-
-    memset(out, 0, outBytes);
-
-    for (step = stepsCount - 1; step >= 0; step--) {
+    /* Traceback */
+    for (step = stepsCount - 1, state = bestState; step >= 0; step--) {
         const uint32_t decodedBits = getLastBitsFromState(state, vbdCtrl->bitsPerStep);
         setOutBits(out, step, vbdCtrl->bitsPerStep, decodedBits);
         state = survivors[step][state];
