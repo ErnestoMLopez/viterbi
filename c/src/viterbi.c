@@ -19,6 +19,12 @@
  * =======================================================================
  */
 
+/**
+ * @brief Maximum number of output symbols per step (n) supported by the decoder. This limit is needed only to determine
+ * the memory asigned to store the output generators.
+ */
+#define VBD_MAX_SYMBOLS_PER_STEP 8
+
 
 /* =======================================================================
  * [TYPEDEF]
@@ -43,7 +49,7 @@ struct vbd_ctrl {
     uint8_t symbolsPerStep;                                    //< Symbols output by the encoder at each step (n)
     uint8_t constraintLength;                                  //< Constraint length (K)
     v_generator_t symbolGenerators[VBD_MAX_SYMBOLS_PER_STEP];  //< Generators for each symbol
-    uint32_t* survivors;    //< Buffer for surviving paths. Must be of size 4*N*(k/n)*(2^((K-1)*k))
+    v_state_t* survivors;   //< Buffer for surviving paths. Must be of size 4*N*(k/n)*(2^((K-1)*k))
     uint32_t* currMetrics;  //< Buffer for current metrics. Must be of size 4*(2^((K-1)*k))
     uint32_t* nextMetrics;  //< Buffer for next step metrics. Must be of size 4*(2^((K-1)*k))
 };
@@ -62,7 +68,7 @@ vbd_ctrl_t vbdTable[VBD_MAX_DECODERS];
  * =======================================================================
  */
 
-static inline uint32_t parity32(uint32_t x)
+static inline uint8_t parity32(uint32_t x)
 {
     x ^= x >> 16;
     x ^= x >> 8;
@@ -73,7 +79,7 @@ static inline uint32_t parity32(uint32_t x)
     return x & 1;
 }
 
-static inline uint8_t getInputSymbols(const uint8_t* in, const uint32_t step, const uint32_t symbolsPerStep)
+static inline uint8_t getInputSymbols(const uint8_t* in, const uint32_t step, const uint8_t symbolsPerStep)
 {
     const uint32_t symbolStart = symbolsPerStep * step;
     uint8_t symbols            = 0;
@@ -107,13 +113,13 @@ static inline void setOutBits(uint8_t* out, const uint32_t step, const uint8_t b
 }
 
 static inline uint8_t encodeBits(
-        uint32_t state,
+        v_state_t state,
         const uint8_t bits,
         const uint8_t bitsPerStep,
         const uint8_t symbolsPerStep,
         const v_generator_t* symbolGen)
 {
-    const uint32_t reg = ((state << bitsPerStep) | bits);
+    const uint32_t reg = (((uint32_t)state << bitsPerStep) | bits);
 
     uint8_t symbols = 0;
     uint8_t i;
@@ -139,18 +145,19 @@ static inline uint8_t calculateError(const uint8_t symbols, const uint8_t outSym
     return errors;
 }
 
-static inline uint32_t
-getNextState(const uint32_t state, const uint8_t bits, const uint8_t bitsPerStep, const uint8_t constraintLength)
+static inline v_state_t
+getNextState(const v_state_t state, const uint8_t bits, const uint8_t bitsPerStep, const uint8_t constraintLength)
 {
     const uint32_t stateMask = ((1 << ((constraintLength - 1) * bitsPerStep)) - 1);
 
-    return ((state << bitsPerStep) | bits) & stateMask;
+    return (v_state_t)((((uint32_t)state << bitsPerStep) | bits) & stateMask);
 }
 
-static inline uint8_t getLastBitsFromState(const uint32_t state, const uint8_t bitsPerStep)
+static inline uint8_t getLastBitsFromState(const v_state_t state, const uint8_t bitsPerStep)
 {
     const uint32_t lastBitsMask = ((1 << bitsPerStep) - 1);
-    return state & lastBitsMask;
+
+    return (uint8_t)((uint32_t)state & lastBitsMask);
 }
 
 
@@ -181,9 +188,10 @@ int32_t viterbiBlockDecoderInit(
         return -2;
     }
 
-    const uint32_t stateCount            = 1 << ((constraintLength - 1) * bitsPerStep);
-    const uint32_t survivorsBufferSize   = 4 * symbolsPerInput * bitsPerStep * stateCount / symbolsPerStep;
-    const uint32_t pathMetricsBufferSize = 4 * stateCount;
+    const uint32_t stateCount          = 1 << ((constraintLength - 1) * bitsPerStep);
+    const uint32_t survivorsBufferSize = sizeof(v_state_t) * symbolsPerInput * bitsPerStep * stateCount
+            / symbolsPerStep;
+    const uint32_t pathMetricsBufferSize = sizeof(uint32_t) * stateCount;
     const uint32_t totalBufferSize       = survivorsBufferSize + 2 * pathMetricsBufferSize;
 
     if (bufferSize < totalBufferSize) {
@@ -204,7 +212,7 @@ int32_t viterbiBlockDecoderInit(
         (*vbdCtrl)->symbolGenerators[i] = symbolGenerators[i];
     }
 
-    (*vbdCtrl)->survivors   = (uint32_t*)workingBuffer;
+    (*vbdCtrl)->survivors   = (v_state_t*)workingBuffer;
     (*vbdCtrl)->currMetrics = (uint32_t*)(workingBuffer + survivorsBufferSize);
     (*vbdCtrl)->nextMetrics = (uint32_t*)(workingBuffer + survivorsBufferSize + pathMetricsBufferSize);
 
@@ -224,11 +232,11 @@ int32_t viterbiBlockDecoder(const vbd_ctrl_t* vbdCtrl, const uint8_t* in, uint8_
     const uint32_t outBytes    = (vbdCtrl->bitsPerStep * stepsCount + 7) / 8;
     const uint8_t maxBitsValue = (1 << vbdCtrl->bitsPerStep) - 1;
 
-    uint32_t (*survivors)[stateCount] = (uint32_t (*)[stateCount])vbdCtrl->survivors;
+    v_state_t(*survivors)[stateCount] = (v_state_t(*)[stateCount])vbdCtrl->survivors;
     uint32_t* currMetrics             = vbdCtrl->currMetrics;
     uint32_t* nextMetrics             = vbdCtrl->nextMetrics;
 
-    uint32_t state;
+    v_state_t state;
     int32_t step;
     uint8_t bits;
 
@@ -250,8 +258,8 @@ int32_t viterbiBlockDecoder(const vbd_ctrl_t* vbdCtrl, const uint8_t* in, uint8_
 
             for (bits = 0; bits <= maxBitsValue; bits++) {
 
-                const uint32_t nextState = getNextState(state, bits, vbdCtrl->bitsPerStep, vbdCtrl->constraintLength);
-                const uint8_t outSymbols = encodeBits(
+                const v_state_t nextState = getNextState(state, bits, vbdCtrl->bitsPerStep, vbdCtrl->constraintLength);
+                const uint8_t outSymbols  = encodeBits(
                         state,
                         bits,
                         vbdCtrl->bitsPerStep,

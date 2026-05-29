@@ -26,12 +26,6 @@
  */
 #define VBD_MAX_DECODERS 6
 
-/**
- * @brief Maximum number of output symbols per step (n) supported by the decoder. This limit is needed only to determine
- * the memory asigned to store the output generators.
- */
-#define VBD_MAX_SYMBOLS_PER_STEP 8
-
 
 /* =======================================================================
  * [TYPEDEF]
@@ -42,6 +36,18 @@
  * @brief Control structure for a Viterbi block decoder instance.
  */
 typedef struct vbd_ctrl vbd_ctrl_t;
+
+/**
+ * @brief Data type to store the state of the Viterbi decoder.
+ *
+ * The state corresponds to the content of the shift register not including the most recent bits. The user can select
+ * the data type used in order to reduce the memory needed for the survivors path storage. The maximum number of states
+ * is 2^((K-1)*k), where K is the constraint length and k is the number of bits input to the encoder at each step. E.g.
+ * for K=7 and k=1, the maximum number of states is 64, so a uint8_t can be used to store the state. For K=7 and k=2,
+ * the maximum number of states is 4096, so a uint16_t can be used.
+ *
+ */
+typedef uint8_t v_state_t;
 
 /**
  * @brief Data type for the generator polynomials used in the convolutional encoder.
