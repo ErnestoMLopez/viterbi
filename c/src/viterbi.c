@@ -43,9 +43,9 @@ struct vbd_ctrl {
     uint8_t symbolsPerStep;                                    //< Symbols output by the encoder at each step (n)
     uint8_t constraintLength;                                  //< Constraint length (K)
     v_generator_t symbolGenerators[VBD_MAX_SYMBOLS_PER_STEP];  //< Generators for each symbol
-    uint32_t* survivors;        //< Buffer for surviving paths. Must be of size 4*N*(k/n)*(2^((K-1)*k))
-    uint32_t* pathMetricsCurr;  //< Buffer for current metrics. Must be of size 4*(2^((K-1)*k))
-    uint32_t* pathMetricsNext;  //< Buffer for next step metrics. Must be of size 4*(2^((K-1)*k))
+    uint32_t* survivors;    //< Buffer for surviving paths. Must be of size 4*N*(k/n)*(2^((K-1)*k))
+    uint32_t* currMetrics;  //< Buffer for current metrics. Must be of size 4*(2^((K-1)*k))
+    uint32_t* nextMetrics;  //< Buffer for next step metrics. Must be of size 4*(2^((K-1)*k))
 };
 
 uint8_t vbdCount = 0;
@@ -204,9 +204,9 @@ int32_t viterbiBlockDecoderInit(
         (*vbdCtrl)->symbolGenerators[i] = symbolGenerators[i];
     }
 
-    (*vbdCtrl)->survivors       = (uint32_t*)workingBuffer;
-    (*vbdCtrl)->pathMetricsCurr = (uint32_t*)(workingBuffer + survivorsBufferSize);
-    (*vbdCtrl)->pathMetricsNext = (uint32_t*)(workingBuffer + survivorsBufferSize + pathMetricsBufferSize);
+    (*vbdCtrl)->survivors   = (uint32_t*)workingBuffer;
+    (*vbdCtrl)->currMetrics = (uint32_t*)(workingBuffer + survivorsBufferSize);
+    (*vbdCtrl)->nextMetrics = (uint32_t*)(workingBuffer + survivorsBufferSize + pathMetricsBufferSize);
 
     return 0;
 }
@@ -225,24 +225,24 @@ int32_t viterbiBlockDecoder(const vbd_ctrl_t* vbdCtrl, const uint8_t* in, uint8_
     const uint8_t maxBitsValue = (1 << vbdCtrl->bitsPerStep) - 1;
 
     uint32_t (*survivors)[stateCount] = (uint32_t (*)[stateCount])vbdCtrl->survivors;
-    uint32_t* pathMetricsCurr         = vbdCtrl->pathMetricsCurr;
-    uint32_t* pathMetricsNext         = vbdCtrl->pathMetricsNext;
+    uint32_t* currMetrics             = vbdCtrl->currMetrics;
+    uint32_t* nextMetrics             = vbdCtrl->nextMetrics;
 
     uint32_t state;
     int32_t step;
     uint8_t bits;
 
 
-    memset(pathMetricsCurr, (int)infinity, sizeof(uint32_t) * stateCount);
-    pathMetricsCurr[0] = 0;
+    memset(currMetrics, (int)infinity, sizeof(uint32_t) * stateCount);
+    currMetrics[0] = 0;
 
     for (step = 0; step < stepsCount; step++) {
-        memset(pathMetricsNext, (int)infinity, sizeof(uint32_t) * stateCount);
+        memset(nextMetrics, (int)infinity, sizeof(uint32_t) * stateCount);
 
         const uint8_t symbols = getInputSymbols(in, step, vbdCtrl->symbolsPerStep);
 
         for (state = 0; state < stateCount; state++) {
-            uint32_t currMetric = pathMetricsCurr[state];
+            uint32_t currMetric = currMetrics[state];
 
             if (currMetric == infinity) {
                 continue;
@@ -261,15 +261,15 @@ int32_t viterbiBlockDecoder(const vbd_ctrl_t* vbdCtrl, const uint8_t* in, uint8_
 
                 const uint32_t newMetric = currMetric + errors;
 
-                if (newMetric < pathMetricsNext[nextState]) {
-                    pathMetricsNext[nextState] = newMetric;
+                if (newMetric < nextMetrics[nextState]) {
+                    nextMetrics[nextState]     = newMetric;
                     survivors[step][nextState] = state;
                 }
             }
         }
 
         for (state = 0; state < stateCount; state++) {
-            pathMetricsCurr[state] = pathMetricsNext[state];
+            currMetrics[state] = nextMetrics[state];
         }
     }
 
@@ -277,8 +277,8 @@ int32_t viterbiBlockDecoder(const vbd_ctrl_t* vbdCtrl, const uint8_t* in, uint8_
     uint32_t bestState  = 0;
 
     for (state = 0; state < stateCount; state++) {
-        if (pathMetricsCurr[state] < bestMetric) {
-            bestMetric = pathMetricsCurr[state];
+        if (currMetrics[state] < bestMetric) {
+            bestMetric = currMetrics[state];
             bestState  = state;
         }
     }
