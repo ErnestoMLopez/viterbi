@@ -16,6 +16,8 @@
 #define TEST_VBD_INVERT_G1         0
 #define TEST_VBD_INVERT_G2         1
 
+#define RED(x)   "\033[31m" x "\033[0m"
+#define GREEN(x) "\033[32m" x "\033[0m"
 
 const uint8_t inputSymbols[TEST_VBD_IN_BYTES] = { 0x8C, 0x1A, 0xAA, 0x73, 0x31, 0x5A, 0x6F, 0x59, 0x78, 0x95,
                                                   0x55, 0x8C, 0xCE, 0xA5, 0x90, 0xA6, 0x84, 0x02, 0x02, 0x1B,
@@ -64,11 +66,11 @@ void printResults(const char* title, int diffBits, unsigned int errorsDetected)
     printf("%s\n", title);
 
     if (diffBits == 0) {
-        printf("Result: \033[32mOK\033[0m\n");
+        printf("Result: " GREEN("OK") "\n");
         printf(" >> Output bit sequence matches expected sequence\n");
         printf(" >> %u bit errors detected\n", errorsDetected);
     } else {
-        printf("Result: \033[31mFAIL\033[0m\n");
+        printf("Result: " RED("FAIL") "\n");
         printf(" >> %d different bits.\n", diffBits);
         printf(" >> %u bit errors detected\n", errorsDetected);
     }
@@ -87,9 +89,114 @@ void processTestResults(const char* title, const uint8_t* output, uint32_t bitEr
 }
 
 
+void vbdFailInitTest1(void)
+{
+    const char* title = "VBD Init Test 1: Too many instances.";
+
+    uint8_t input[TEST_VBD_IN_BYTES];
+    int32_t ret;
+    int i;
+
+    memcpy(input, inputSymbols, sizeof(inputSymbols));
+
+    vbd_ctrl_t* vbdCtrl[VBD_MAX_DECODERS + 1];
+    v_generator_t symbolGen[2] = { [0] = { .poly = TEST_VBD_POLY_G1, .isInverted = TEST_VBD_INVERT_G1 },
+                                   [1] = { .poly = TEST_VBD_POLY_G2, .isInverted = TEST_VBD_INVERT_G2 } };
+    uint8_t buffer[31232]      = { 0 };
+
+    for (i = 0; i < VBD_MAX_DECODERS; i++) {
+        ret = viterbiBlockDecoderInit(&vbdCtrl[i], TEST_VBD_IN_SYMBOLS, 1, 2, 7, symbolGen, buffer, 31232);
+
+        if (ret < 0) {
+            printf("VBD test error at initialization\n");
+            return;
+        }
+    }
+
+    ret = viterbiBlockDecoderInit(&vbdCtrl[i], TEST_VBD_IN_SYMBOLS, 1, 2, 7, symbolGen, buffer, 31232);
+
+    for (i = 0; i < VBD_MAX_DECODERS; i++) {
+        viterbiBlockDecoderFree(vbdCtrl[i]);
+    }
+
+    printf("--------------------------------------------------------------------------------\n");
+    printf("%s\n", title);
+    if (ret != -1) {
+        printf("Result: " RED("FAIL") "\n");
+        printf(" >> Expected error code -1, got %d\n", ret);
+    } else {
+        printf("Result: " GREEN("OK") "\n");
+        printf(" >> Correct error code -1 received when exceeding max instances.\n");
+    }
+    printf("--------------------------------------------------------------------------------\n");
+}
+
+void vbdFailInitTest2(void)
+{
+    const char* title = "VBD Init Test 2: Too many symbols per step.";
+
+    uint8_t input[TEST_VBD_IN_BYTES];
+    int32_t ret;
+
+    memcpy(input, inputSymbols, sizeof(inputSymbols));
+
+    vbd_ctrl_t* vbdCtrl;
+    v_generator_t symbolGen[9] = { [0] = { .poly = TEST_VBD_POLY_G1, .isInverted = TEST_VBD_INVERT_G1 },
+                                   [8] = { .poly = TEST_VBD_POLY_G2, .isInverted = TEST_VBD_INVERT_G2 } };
+    uint8_t buffer[31232]      = { 0 };
+
+    ret = viterbiBlockDecoderInit(&vbdCtrl, TEST_VBD_IN_SYMBOLS, 1, 9, 7, symbolGen, buffer, 31232);
+
+    printf("--------------------------------------------------------------------------------\n");
+    printf("%s\n", title);
+    if (ret != -2) {
+        printf("Result: " RED("FAIL") "\n");
+        printf(" >> Expected error code -2, got %d\n", ret);
+    } else {
+        printf("Result: " GREEN("OK") "\n");
+        printf(" >> Correct error code -2 received when exceeding max symbols per step.\n");
+    }
+    printf("--------------------------------------------------------------------------------\n");
+}
+
+void vbdFailInitTest3(void)
+{
+    const char* title = "VBD Init Test 3: Working buffer too small.";
+
+    uint8_t input[TEST_VBD_IN_BYTES];
+    int32_t ret;
+
+    memcpy(input, inputSymbols, sizeof(inputSymbols));
+
+    vbd_ctrl_t* vbdCtrl;
+    v_generator_t symbolGen[9] = { [0] = { .poly = TEST_VBD_POLY_G1, .isInverted = TEST_VBD_INVERT_G1 },
+                                   [8] = { .poly = TEST_VBD_POLY_G2, .isInverted = TEST_VBD_INVERT_G2 } };
+
+    const uint32_t N              = TEST_VBD_IN_SYMBOLS;
+    const uint32_t k              = 1;
+    const uint32_t n              = 2;
+    const uint32_t K              = TEST_VBD_CONSTRAINT_LENGTH;
+    const size_t bufferSizeNeeded = sizeof(v_state_t) * N * k * (1 << ((K - 1) * k)) / n
+            + 2 * sizeof(uint32_t) * (1 << ((K - 1) * k));
+    uint8_t buffer[bufferSizeNeeded];
+
+    ret = viterbiBlockDecoderInit(&vbdCtrl, N, k, n, K, symbolGen, buffer, bufferSizeNeeded - 1);
+
+    printf("--------------------------------------------------------------------------------\n");
+    printf("%s\n", title);
+    if (ret != -3) {
+        printf("Result: " RED("FAIL") "\n");
+        printf(" >> Expected error code -3, got %d\n", ret);
+    } else {
+        printf("Result: " GREEN("OK") "\n");
+        printf(" >> Correct error code -3 received when the working buffer is not enough.\n");
+    }
+    printf("--------------------------------------------------------------------------------\n");
+}
+
 void vbdTest1(void)
 {
-    const char* title = "VGDB Test1: Input with 0 errors.";
+    const char* title = "VBD Test1: Input with 0 errors.";
 
     uint8_t input[TEST_VBD_IN_BYTES];
     uint8_t output[TEST_VBD_OUT_BYTES];
@@ -105,7 +212,7 @@ void vbdTest1(void)
     ret = viterbiBlockDecoderInit(&vbdCtrl, TEST_VBD_IN_SYMBOLS, 1, 2, 7, symbolGen, buffer, 31232);
 
     if (ret < 0) {
-        printf("VGDB test error at initialization\n");
+        printf("VBD test error at initialization\n");
         return;
     }
 
@@ -114,7 +221,7 @@ void vbdTest1(void)
     ret = viterbiBlockDecoderFree(vbdCtrl);
 
     if (ret < 0) {
-        printf("VGDB test error at freeing decoder instance\n");
+        printf("VBD test error at freeing decoder instance\n");
         return;
     }
 
@@ -123,7 +230,7 @@ void vbdTest1(void)
 
 void vbdTest2(void)
 {
-    const char* title = "VGDB Test2: Input with 1 bit error.";
+    const char* title = "VBD Test2: Input with 1 bit error.";
 
     uint8_t input[TEST_VBD_IN_BYTES];
     uint8_t output[TEST_VBD_OUT_BYTES];
@@ -142,7 +249,7 @@ void vbdTest2(void)
     ret = viterbiBlockDecoderInit(&vbdCtrl, TEST_VBD_IN_SYMBOLS, 1, 2, 7, symbolGen, buffer, 31232);
 
     if (ret < 0) {
-        printf("VGDB test error at initialization\n");
+        printf("VBD test error at initialization\n");
         return;
     }
 
@@ -151,7 +258,7 @@ void vbdTest2(void)
     ret = viterbiBlockDecoderFree(vbdCtrl);
 
     if (ret < 0) {
-        printf("VGDB test error at freeing decoder instance\n");
+        printf("VBD test error at freeing decoder instance\n");
         return;
     }
 
@@ -182,7 +289,7 @@ void vbdTest3(void)
     ret = viterbiBlockDecoderInit(&vbdCtrl, TEST_VBD_IN_SYMBOLS, 1, 2, 7, symbolGen, buffer, 31232);
 
     if (ret < 0) {
-        printf("VGDB test error at initialization\n");
+        printf("VBD test error at initialization\n");
         return;
     }
 
@@ -191,7 +298,7 @@ void vbdTest3(void)
     ret = viterbiBlockDecoderFree(vbdCtrl);
 
     if (ret < 0) {
-        printf("VGDB test error at freeing decoder instance\n");
+        printf("VBD test error at freeing decoder instance\n");
         return;
     }
 
@@ -219,7 +326,7 @@ void vbdTest4(void)
     ret = viterbiBlockDecoderInit(&vbdCtrl, TEST_VBD_IN_SYMBOLS, 1, 2, 7, symbolGen, buffer, 31232);
 
     if (ret < 0) {
-        printf("VGDB test error at initialization\n");
+        printf("VBD test error at initialization\n");
         return;
     }
 
@@ -228,7 +335,7 @@ void vbdTest4(void)
     ret = viterbiBlockDecoderFree(vbdCtrl);
 
     if (ret < 0) {
-        printf("VGDB test error at freeing decoder instance\n");
+        printf("VBD test error at freeing decoder instance\n");
         return;
     }
 
@@ -237,6 +344,10 @@ void vbdTest4(void)
 
 int main(void)
 {
+    vbdFailInitTest1();
+    vbdFailInitTest2();
+    vbdFailInitTest3();
+
     vbdTest1();
     vbdTest2();
     vbdTest3();
