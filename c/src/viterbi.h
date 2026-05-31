@@ -90,6 +90,7 @@ typedef struct v_generator {
  *         -2 = maximum decoders instances limit reached.
  *         -3 = too many symbols per step.
  *         -4 = not enough workspace memory.
+ *         -5 = too many states for the selected data type for v_state_t.
  */
 int32_t viterbiBlockDecoderInit(
         vbd_ctrl_t** vbdCtrl,
