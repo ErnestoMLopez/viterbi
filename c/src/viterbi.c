@@ -197,7 +197,7 @@ int32_t viterbiBlockDecoderInit(
         return -3;
     }
 
-    const uint32_t totalStates         = 1 << ((constraintLength - 1) * bitsPerStep);
+    const uint64_t totalStates         = 1 << ((constraintLength - 1) * bitsPerStep);
     const uint32_t survivorsBufferSize = sizeof(v_state_t) * symbolsPerInput * bitsPerStep * totalStates
             / symbolsPerStep;
     const uint32_t pathMetricsBufferSize = sizeof(uint32_t) * totalStates;
@@ -206,6 +206,27 @@ int32_t viterbiBlockDecoderInit(
     if (bufferSize < totalBufferSize) {
         fprintf(stderr, "Not enough workspace memory (%u bytes needed, %u provided)\n", totalBufferSize, bufferSize);
         return -4;
+    }
+
+    uint64_t maxTotalStates = UINT64_MAX - 1;
+
+    switch (sizeof(v_state_t)) {
+    case 1:
+        maxTotalStates = (uint64_t)UINT8_MAX + 1;
+        break;
+    case 2:
+        maxTotalStates = (uint64_t)UINT16_MAX + 1;
+        break;
+    case 4:
+        maxTotalStates = (uint64_t)UINT32_MAX + 1;
+        break;
+    default:
+        break;
+    }
+
+    if (totalStates > maxTotalStates) {
+        fprintf(stderr, "Too many states for v_state_t type (%lu maximum)\n", maxTotalStates);
+        return -5;
     }
 
     uint8_t i;

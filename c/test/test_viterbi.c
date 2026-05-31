@@ -251,6 +251,47 @@ void vbdFailInitTest4(void)
     printf("--------------------------------------------------------------------------------\n");
 }
 
+void vbdFailInitTest5(void)
+{
+    const char* title = "VBD Init Test 5: Data type for v_state_t is not wide enough.";
+
+    uint8_t input[TEST_VBD_IN_BYTES];
+    int32_t ret;
+
+    memcpy(input, inputSymbols, sizeof(inputSymbols));
+
+    vbd_ctrl_t* vbdCtrl;
+    v_generator_t symbolGen[9] = { [0] = { .poly = TEST_VBD_POLY_G1, .isInverted = TEST_VBD_INVERT_G1 },
+                                   [8] = { .poly = TEST_VBD_POLY_G2, .isInverted = TEST_VBD_INVERT_G2 } };
+
+    const uint32_t N = 10;
+    const uint32_t k = 3;
+    const uint32_t n = 8;
+    const uint32_t K = TEST_VBD_CONSTRAINT_LENGTH;
+
+    const size_t bufferSizeNeeded = sizeof(v_state_t) * N * k * (1 << ((K - 1) * k)) / n
+            + 2 * sizeof(uint32_t) * (1 << ((K - 1) * k));
+
+    // Fake buffer to avoid huge memory allocation for the test
+    uint8_t buffer = 0;
+
+
+    ret = viterbiBlockDecoderInit(&vbdCtrl, N, k, n, K, symbolGen, &buffer, bufferSizeNeeded);
+
+    viterbiBlockDecoderFree(vbdCtrl);
+
+    printf("--------------------------------------------------------------------------------\n");
+    printf("%s\n", title);
+    if (ret != -5) {
+        printf("Result: " RED("FAIL") "\n");
+        printf(" >> Expected error code -5, got %d\n", ret);
+    } else {
+        printf("Result: " GREEN("OK") "\n");
+        printf(" >> Correct error code -5 received when the data type for v_state_t is not wide enough.\n");
+    }
+    printf("--------------------------------------------------------------------------------\n");
+}
+
 void vbdTest1(void)
 {
     const char* title = "VBD Test1: Input with 0 errors.";
@@ -404,6 +445,8 @@ int main(void)
     vbdFailInitTest1();
     vbdFailInitTest2();
     vbdFailInitTest3();
+    vbdFailInitTest4();
+    vbdFailInitTest5();
 
     vbdTest1();
     vbdTest2();
