@@ -182,6 +182,8 @@ void vbdFailInitTest3(void)
             + 2 * sizeof(uint32_t) * (1 << ((K - 1) * k));
     uint8_t buffer[bufferSizeNeeded];
 
+    memset(buffer, 0, bufferSizeNeeded);
+
     ret = viterbiBlockDecoderInit(&vbdCtrl, N, k, n, K, symbolGen, buffer, bufferSizeNeeded - 1);
 
     viterbiBlockDecoderFree(vbdCtrl);
