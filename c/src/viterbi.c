@@ -49,7 +49,7 @@ struct vbd_ctrl {
     uint8_t bitsPerStep;       //< Bits input to the encoder at each step (k)
     uint8_t symbolsPerStep;    //< Symbols output by the encoder at each step (n)
     uint8_t constraintLength;  //< Constraint length (K)
-    uint32_t totalStates;      //< Number of states in the trellis (2^((K-1)*k))
+    v_state_t totalStates;     //< Number of states in the trellis (2^((K-1)*k))
     uint32_t totalSteps;       //< Number of total steps for block input (N/n)
     uint32_t outBytes;         //< Number of bytes needed to store the decoded output ((k*(N/n)/8)
     uint8_t maxBitsValue;      //< Maximum value for the bits input to the encoder at each step (2^k - 1)
@@ -271,7 +271,7 @@ int32_t viterbiBlockDecoder(const vbd_ctrl_t* vbdCtrl, const uint8_t* in, uint8_
     currMetrics[0] = 0;
 
     /* Forward processing of each step symbols */
-    for (step = 0; step < vbdCtrl->totalSteps; step++) {
+    for (step = 0; step < (int32_t)vbdCtrl->totalSteps; step++) {
         memset(nextMetrics, (int)infinity, sizeof(uint32_t) * vbdCtrl->totalStates);
 
         const uint8_t symbols = getInputSymbols(in, step, vbdCtrl->symbolsPerStep);
@@ -320,7 +320,7 @@ int32_t viterbiBlockDecoder(const vbd_ctrl_t* vbdCtrl, const uint8_t* in, uint8_
     }
 
     /* Traceback */
-    for (step = vbdCtrl->totalSteps - 1, state = bestState; step >= 0; step--) {
+    for (step = (int32_t)vbdCtrl->totalSteps - 1, state = bestState; step >= 0; step--) {
         const uint32_t decodedBits = getLastBitsFromState(state, vbdCtrl->bitsPerStep);
         setOutBits(out, step, vbdCtrl->bitsPerStep, decodedBits);
         state = survivors[step][state];
