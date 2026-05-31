@@ -147,6 +147,8 @@ void vbdFailInitTest2(void)
 
     ret = viterbiBlockDecoderInit(&vbdCtrl, TEST_VBD_IN_SYMBOLS, 1, 9, 7, symbolGen, buffer, 31232);
 
+    viterbiBlockDecoderFree(vbdCtrl);
+
     printf("--------------------------------------------------------------------------------\n");
     printf("%s\n", title);
     if (ret != -2) {
@@ -181,6 +183,8 @@ void vbdFailInitTest3(void)
     uint8_t buffer[bufferSizeNeeded];
 
     ret = viterbiBlockDecoderInit(&vbdCtrl, N, k, n, K, symbolGen, buffer, bufferSizeNeeded - 1);
+
+    viterbiBlockDecoderFree(vbdCtrl);
 
     printf("--------------------------------------------------------------------------------\n");
     printf("%s\n", title);
