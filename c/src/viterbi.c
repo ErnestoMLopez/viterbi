@@ -181,9 +181,10 @@ int32_t viterbiBlockDecoderInit(
         const uint8_t* workingBuffer,
         const uint32_t bufferSize)
 {
+    *vbdCtrl = NULL;
+
     if (vbdCount >= VBD_MAX_DECODERS) {
         fprintf(stderr, "Viterbi generic decoders limit reached (%u maximum)\n", VBD_MAX_DECODERS);
-        *vbdCtrl = NULL;
         return -1;
     }
 
