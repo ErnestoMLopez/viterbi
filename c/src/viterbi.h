@@ -85,10 +85,11 @@ typedef struct v_generator {
  * @param symbolGenerators Pointer to an array of ::symbolsPerStep generator polynomials.
  * @param workingBuffer Buffer needed for the survivors path and metrics storage.
  * @param bufferSize Buffer size [bytes].
- * @return 0  = success.
- *         -1 = maximum decoders instances limit reached.
- *         -2 = too many symbols per step.
- *         -3 = not enough workspace memory.
+ * @return  0 = success.
+ *         -1 = invalid pointer arguments.
+ *         -2 = maximum decoders instances limit reached.
+ *         -3 = too many symbols per step.
+ *         -4 = not enough workspace memory.
  */
 int32_t viterbiBlockDecoderInit(
         vbd_ctrl_t** vbdCtrl,

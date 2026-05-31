@@ -181,16 +181,20 @@ int32_t viterbiBlockDecoderInit(
         const uint8_t* workingBuffer,
         const uint32_t bufferSize)
 {
+    if (vbdCtrl == NULL || symbolGenerators == NULL || workingBuffer == NULL) {
+        return -1;
+    }
+
     *vbdCtrl = NULL;
 
     if (vbdCount >= VBD_MAX_DECODERS) {
         fprintf(stderr, "Viterbi generic decoders limit reached (%u maximum)\n", VBD_MAX_DECODERS);
-        return -1;
+        return -2;
     }
 
     if (symbolsPerStep > VBD_MAX_SYMBOLS_PER_STEP) {
         fprintf(stderr, "Too many output symbols generators (%u maximum)\n", VBD_MAX_SYMBOLS_PER_STEP);
-        return -2;
+        return -3;
     }
 
     const uint32_t totalStates         = 1 << ((constraintLength - 1) * bitsPerStep);
@@ -201,7 +205,7 @@ int32_t viterbiBlockDecoderInit(
 
     if (bufferSize < totalBufferSize) {
         fprintf(stderr, "Not enough workspace memory (%u bytes needed, %u provided)\n", totalBufferSize, bufferSize);
-        return -3;
+        return -4;
     }
 
     uint8_t i;

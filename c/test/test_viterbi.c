@@ -91,7 +91,58 @@ void processTestResults(const char* title, const uint8_t* output, uint32_t bitEr
 
 void vbdFailInitTest1(void)
 {
-    const char* title = "VBD Init Test 1: Too many instances.";
+    const char* title = "VBD Init Test 1: Invalid pointer arguments.";
+
+    uint8_t input[TEST_VBD_IN_BYTES];
+    int32_t ret;
+    int status = 0;
+
+    memcpy(input, inputSymbols, sizeof(inputSymbols));
+
+    vbd_ctrl_t* vbdCtrl;
+    v_generator_t symbolGen[9] = { [0] = { .poly = TEST_VBD_POLY_G1, .isInverted = TEST_VBD_INVERT_G1 },
+                                   [8] = { .poly = TEST_VBD_POLY_G2, .isInverted = TEST_VBD_INVERT_G2 } };
+    uint8_t buffer[31232]      = { 0 };
+
+    ret = viterbiBlockDecoderInit(NULL, TEST_VBD_IN_SYMBOLS, 1, 9, 7, symbolGen, buffer, 31232);
+
+    if (ret != -1) {
+        status = 1;
+    }
+
+    viterbiBlockDecoderFree(vbdCtrl);
+
+    ret = viterbiBlockDecoderInit(&vbdCtrl, TEST_VBD_IN_SYMBOLS, 1, 9, 7, NULL, buffer, 31232);
+
+    if (ret != -1) {
+        status = 1;
+    }
+
+    viterbiBlockDecoderFree(vbdCtrl);
+
+    ret = viterbiBlockDecoderInit(&vbdCtrl, TEST_VBD_IN_SYMBOLS, 1, 9, 7, symbolGen, NULL, 31232);
+
+    if (ret != -1) {
+        status = 1;
+    }
+
+    viterbiBlockDecoderFree(vbdCtrl);
+
+    printf("--------------------------------------------------------------------------------\n");
+    printf("%s\n", title);
+    if (status) {
+        printf("Result: " RED("FAIL") "\n");
+        printf(" >> Expected error code -1, got %d\n", ret);
+    } else {
+        printf("Result: " GREEN("OK") "\n");
+        printf(" >> Correct error code -1 received when passing invalid pointer arguments.\n");
+    }
+    printf("--------------------------------------------------------------------------------\n");
+}
+
+void vbdFailInitTest2(void)
+{
+    const char* title = "VBD Init Test 2: Too many instances.";
 
     uint8_t input[TEST_VBD_IN_BYTES];
     int32_t ret;
@@ -121,19 +172,19 @@ void vbdFailInitTest1(void)
 
     printf("--------------------------------------------------------------------------------\n");
     printf("%s\n", title);
-    if (ret != -1) {
+    if (ret != -2) {
         printf("Result: " RED("FAIL") "\n");
-        printf(" >> Expected error code -1, got %d\n", ret);
+        printf(" >> Expected error code -2, got %d\n", ret);
     } else {
         printf("Result: " GREEN("OK") "\n");
-        printf(" >> Correct error code -1 received when exceeding max instances.\n");
+        printf(" >> Correct error code -2 received when exceeding max instances.\n");
     }
     printf("--------------------------------------------------------------------------------\n");
 }
 
-void vbdFailInitTest2(void)
+void vbdFailInitTest3(void)
 {
-    const char* title = "VBD Init Test 2: Too many symbols per step.";
+    const char* title = "VBD Init Test 3: Too many symbols per step.";
 
     uint8_t input[TEST_VBD_IN_BYTES];
     int32_t ret;
@@ -151,19 +202,19 @@ void vbdFailInitTest2(void)
 
     printf("--------------------------------------------------------------------------------\n");
     printf("%s\n", title);
-    if (ret != -2) {
+    if (ret != -3) {
         printf("Result: " RED("FAIL") "\n");
-        printf(" >> Expected error code -2, got %d\n", ret);
+        printf(" >> Expected error code -3, got %d\n", ret);
     } else {
         printf("Result: " GREEN("OK") "\n");
-        printf(" >> Correct error code -2 received when exceeding max symbols per step.\n");
+        printf(" >> Correct error code -3 received when exceeding max symbols per step.\n");
     }
     printf("--------------------------------------------------------------------------------\n");
 }
 
-void vbdFailInitTest3(void)
+void vbdFailInitTest4(void)
 {
-    const char* title = "VBD Init Test 3: Working buffer too small.";
+    const char* title = "VBD Init Test 4: Working buffer too small.";
 
     uint8_t input[TEST_VBD_IN_BYTES];
     int32_t ret;
@@ -190,12 +241,12 @@ void vbdFailInitTest3(void)
 
     printf("--------------------------------------------------------------------------------\n");
     printf("%s\n", title);
-    if (ret != -3) {
+    if (ret != -4) {
         printf("Result: " RED("FAIL") "\n");
-        printf(" >> Expected error code -3, got %d\n", ret);
+        printf(" >> Expected error code -4, got %d\n", ret);
     } else {
         printf("Result: " GREEN("OK") "\n");
-        printf(" >> Correct error code -3 received when the working buffer is not enough.\n");
+        printf(" >> Correct error code -4 received when the working buffer is not enough.\n");
     }
     printf("--------------------------------------------------------------------------------\n");
 }
