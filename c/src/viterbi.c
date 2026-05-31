@@ -44,7 +44,7 @@
  */
 
 struct vbd_ctrl {
-    int8_t vbdId;              // ID of the decoder instance (index in the ::vbdTable)
+    uint8_t isInUse;           // ID of the decoder instance (index in the ::vbdTable)
     uint8_t symbolsPerInput;   //< Symbols count at input buffer (N)
     uint8_t bitsPerStep;       //< Bits input to the encoder at each step (k)
     uint8_t symbolsPerStep;    //< Symbols output by the encoder at each step (n)
@@ -60,7 +60,7 @@ struct vbd_ctrl {
 };
 
 uint8_t vbdCount                      = 0;
-vbd_ctrl_t vbdTable[VBD_MAX_DECODERS] = { { .vbdId = -1 } };
+vbd_ctrl_t vbdTable[VBD_MAX_DECODERS] = { 0 };
 
 
 /* =======================================================================
@@ -207,13 +207,14 @@ int32_t viterbiBlockDecoderInit(
     uint8_t i;
 
     for (i = 0; i < VBD_MAX_DECODERS; i++) {
-        if (vbdTable[i].vbdId == -1) {
+        if (vbdTable[i].isInUse == 0) {
             break;
         }
     }
 
     *vbdCtrl = &vbdTable[i];
 
+    (*vbdCtrl)->isInUse          = 1;
     (*vbdCtrl)->symbolsPerInput  = symbolsPerInput;
     (*vbdCtrl)->bitsPerStep      = bitsPerStep;
     (*vbdCtrl)->symbolsPerStep   = symbolsPerStep;
@@ -243,8 +244,10 @@ int32_t viterbiBlockDecoderFree(vbd_ctrl_t* vbdCtrl)
         return -1;
     }
 
-    vbdCtrl->vbdId = -1;
-    vbdCount--;
+    if (vbdCtrl->isInUse) {
+        vbdCtrl->isInUse = 0;
+        vbdCount--;
+    }
 
     return 0;
 }
